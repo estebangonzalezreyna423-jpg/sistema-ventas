@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sistema de Ventas</title>
+
+    <!DOCTYPE html>
+<style>
+    body {
+        font-family: "Agency FB", Arial, sans-serif;
+        margin: 0;
+        background: #e5e7eb;
+        font-weight: 600;
+    }
+
+    /* 🔥 HEADER */
+    header {
+        background: #1e3a8a;
+        color: white;
+        padding: 15px 30px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.25);
+    }
+
+    header img {
+        height: 50px;
+        margin-right: 15px;
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+
+    .container {
+        padding: 25px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 20px;
+    }
+
+    /* 🔥 CARDS */
+    .card {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0px 6px 18px rgba(0,0,0,0.1);
+        transition: 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+    }
+
+    h2 {
+        color: #1e3a8a;
+        font-size: 18px;
+        margin-bottom: 15px;
+        font-weight: 700;
+    }
+
+    /* 🔥 FILTROS */
+    .form-row {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    select {
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        width: 180px;
+        background: #f1f5f9;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+
+    select:focus {
+        border: 1px solid #1d4ed8;
+        outline: none;
+    }
+
+    /* 🔥 BUSCADOR */
+    .busqueda-box {
+        display: flex;
+        justify-content: center;
+        margin: 15px 0;
+    }
+
+    .busqueda-box input {
+        width: 70%;
+        padding: 12px;
+        border-radius: 20px;
+        border: 1px solid #cbd5e1;
+        text-align: center;
+        background: #f9fafb;
+        font-weight: 600;
+        transition: 0.3s;
+    }
+
+    .busqueda-box input:focus {
+        width: 75%;
+        border: 1px solid #2563eb;
+        box-shadow: 0 0 6px rgba(37, 99, 235, 0.3);
+        outline: none;
+    }
+
+    /* 🔥 CANTIDAD */
+    .cantidad-box {
+        display: flex;
+        justify-content: center;
+    }
+
+    .cantidad-box input {
+        width: 200px;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        text-align: center;
+        background: #f9fafb;
+        font-weight: 600;
+    }
+
+    /* 🔥 BOTÓN */
+    .boton-box {
+        display: flex;
+        justify-content: center;
+        margin-top: 12px;
+    }
+
+    .btn-agregar {
+        padding: 12px 40px;
+        font-size: 16px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #1e40af, #1d4ed8);
+        color: white;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .btn-agregar:hover {
+        transform: scale(1.07);
+        opacity: 0.95;
+    }
+
+    /* 🔥 TABLA */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    th {
+        background: #1e3a8a;
+        color: white;
+        padding: 12px;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    td {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    tr:nth-child(even) {
+        background: #eef2ff;
+    }
+
+    tr:hover {
+        background: #dbeafe;
+    }
+
+    /* 🔥 BOTONES */
+    .btn-finalizar {
+        background: #16a34a;
+        padding: 10px 15px;
+        border-radius: 6px;
+        color: white;
+        border: none;
+        font-weight: 700;
+    }
+
+    .btn-yape {
+        background: #6d28d9;
+        padding: 10px 15px;
+        border-radius: 6px;
+        color: white;
+        border: none;
+        font-weight: 700;
+    }
+
+    .btn-eliminar {
+        background: #dc2626;
+        padding: 6px 10px;
+        border-radius: 6px;
+        color: white;
+        border: none;
+        font-weight: 700;
+    }
+
+    .botones-pago {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .total {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1e3a8a;
+        margin-top: 10px;
+    }
+
+    .inventario {
+        margin-top: 20px;
+    }
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+    <img src="https://yt3.googleusercontent.com/ytc/AIdro_k-fPS9Xt75ReX2p3TPb8kFAOml2N-cvmj7p1e1Q8w05xc=s900-c-k-c0x00ffffff-no-rj">
+    <h1>SISTEMA DE VENTAS</h1>
+</header>
+
+<div class="container">
+
+<div class="grid">
+
+    <div class="card">
+        <h2>AGREGAR PRODUCTO</h2>
+
+        <form action="/" method="get">
+            <div class="form-row">
+                <select name="editorial" onchange="this.form.submit()">
+                    <option value="">Editorial</option>
+                    {% for e in editoriales %}
+                        <option value="{{ e }}" {% if e == editorial_actual %}selected{% endif %}>{{ e }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="categoria" onchange="this.form.submit()">
+                    <option value="">Curso</option>
+                    {% for c in categorias %}
+                        <option value="{{ c }}" {% if c == categoria_actual %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+
+        <form action="/agregar" method="post">
+
+            <div class="busqueda-box">
+                <input type="text" name="codigo" placeholder="Buscar producto..." required>
+            </div>
+
+            <div class="cantidad-box">
+                <input type="number" name="cantidad" placeholder="Cantidad" required>
+            </div>
+
+            <div class="boton-box">
+                <button type="submit" class="btn-agregar">AGREGAR</button>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- 🔥 CARRITO -->
+    <div class="card">
+        <h2>CARRITO</h2>
+
+        <table>
+            <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Cantidad</th>
+                <th>Subtotal</th>
+                <th></th>
+            </tr>
+
+            {% for item in carrito %}
+            <tr>
+                <td>{{ item.codigo }}</td>
+                <td>{{ item.nombre }}</td>
+                <td>S/ {{ item.precio }}</td>
+                <td>{{ item.cantidad }}</td>
+                <td>S/ {{ item.subtotal }}</td>
+                <td>
+                    <a href="/eliminar/{{ loop.index0 }}">
+                        <button class="btn-eliminar">X</button>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <div class="total">
+            Total: S/ {{ total }}
+        </div>
+
+        <div class="botones-pago">
+            <a href="/finalizar/efectivo">
+                <button class="btn-finalizar">EFECTIVO</button>
+            </a>
+
+            <a href="/finalizar/yape">
+                <button class="btn-yape">YAPE</button>
+            </a>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- 🔥 INVENTARIO -->
+<div class="card inventario">
+    <h2>INVENTARIO</h2>
+    {{ tabla|safe }}
+</div>
+```
+
+</div>
+
+</body>
+</html>
+
+
+</div>
+
+</body>
+</html>
