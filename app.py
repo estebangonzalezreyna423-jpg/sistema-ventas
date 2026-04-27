@@ -4,15 +4,13 @@ from datetime import datetime
 import os
 
 app = Flask(__name__)
-
-# 🔐 clave de sesión (mejor usar variable de entorno en producción)
 app.secret_key = os.environ.get("SECRET_KEY", "clave_super_segura_123")
 
 # 📁 ARCHIVOS
 ARCHIVO = "inventario.xlsx"
 ARCHIVO_VENTAS = "ventas.xlsx"
 
-# 👤 USUARIOS (PCs)
+# 👤 USUARIOS
 USUARIOS = {
     "PC1": "123",
     "PC2": "123",
@@ -23,7 +21,14 @@ USUARIOS = {
 # 🔧 FUNCIONES
 # =============================
 
+def archivo_existe(path):
+    return os.path.exists(path)
+
 def cargar_excel():
+    if not archivo_existe(ARCHIVO):
+        print("❌ No existe inventario.xlsx")
+        return pd.DataFrame()
+
     try:
         for i in range(10):
             df = pd.read_excel(ARCHIVO, header=i)
@@ -32,8 +37,11 @@ def cargar_excel():
             if "CODIGO" in df.columns:
                 return df
 
+        print("❌ No se encontró columna CODIGO")
         return pd.DataFrame()
-    except:
+
+    except Exception as e:
+        print("❌ Error leyendo Excel:", e)
         return pd.DataFrame()
 
 
@@ -93,20 +101,14 @@ def index():
 
     total = sum(item["subtotal"] for item in carrito)
 
+    if df.empty:
+        return "❌ Error: inventario.xlsx no encontrado o vacío"
+
     col_editorial = buscar_columna(df, ["EDITORIAL"])
     col_categoria = buscar_columna(df, ["CATEGORIA"])
 
     editoriales = sorted(df[col_editorial].dropna().astype(str).str.upper().unique()) if col_editorial else []
     categorias = sorted(df[col_categoria].dropna().astype(str).str.upper().unique()) if col_categoria else []
-
-    editorial_filtro = limpiar_texto(request.args.get("editorial"))
-    categoria_filtro = limpiar_texto(request.args.get("categoria"))
-
-    if editorial_filtro and col_editorial:
-        df = df[df[col_editorial].astype(str).str.upper() == editorial_filtro]
-
-    if categoria_filtro and col_categoria:
-        df = df[df[col_categoria].astype(str).str.upper() == categoria_filtro]
 
     return render_template(
         "index.html",
@@ -115,14 +117,12 @@ def index():
         total=total,
         editoriales=editoriales,
         categorias=categorias,
-        editorial_actual=editorial_filtro,
-        categoria_actual=categoria_filtro,
         usuario=session.get("user")
     )
 
 
 # =============================
-# ➕ AGREGAR PRODUCTO
+# ➕ AGREGAR
 # =============================
 
 @app.route("/agregar", methods=["POST"])
@@ -131,6 +131,10 @@ def agregar():
         return redirect("/login")
 
     carrito = session.get("carrito", [])
+    df = cargar_excel()
+
+    if df.empty:
+        return "Error cargando inventario"
 
     try:
         busqueda = limpiar_texto(request.form.get("codigo"))
@@ -138,15 +142,10 @@ def agregar():
     except:
         return "Datos inválidos"
 
-    df = cargar_excel()
-
     col_codigo = buscar_columna(df, ["CODIGO"])
     col_nombre = buscar_columna(df, ["NOMBRE"])
     col_precio = buscar_columna(df, ["COSTO"])
     col_stock = buscar_columna(df, ["STOCK"])
-
-    if not all([col_codigo, col_nombre, col_precio, col_stock]):
-        return "Faltan columnas en el Excel"
 
     fila = df[
         (df[col_codigo].astype(str).str.upper() == busqueda) |
@@ -158,11 +157,8 @@ def agregar():
 
     producto = fila.iloc[0]
 
-    try:
-        precio = float(str(producto[col_precio]).replace("S/", "").strip())
-        stock = float(producto[col_stock])
-    except:
-        return "Error en datos del producto"
+    precio = float(str(producto[col_precio]).replace("S/", "").strip())
+    stock = float(producto[col_stock])
 
     if stock < cantidad:
         return "Stock insuficiente"
@@ -176,102 +172,13 @@ def agregar():
     })
 
     session["carrito"] = carrito
-
     return redirect("/")
 
 
 # =============================
-# ❌ ELIMINAR
-# =============================
-
-@app.route("/eliminar/<int:index>")
-def eliminar(index):
-    if login_requerido():
-        return redirect("/login")
-
-    carrito = session.get("carrito", [])
-
-    if 0 <= index < len(carrito):
-        carrito.pop(index)
-
-    session["carrito"] = carrito
-    return redirect("/")
-
-
-# =============================
-# 💰 FINALIZAR VENTA
-# =============================
-
-@app.route("/finalizar/<metodo>")
-def finalizar(metodo):
-    if login_requerido():
-        return redirect("/login")
-
-    carrito = session.get("carrito", [])
-
-    if not carrito:
-        return "Carrito vacío"
-
-    df = cargar_excel()
-
-    col_codigo = buscar_columna(df, ["CODIGO"])
-    col_stock = buscar_columna(df, ["STOCK"])
-    col_ventas = buscar_columna(df, ["VENTA"])
-    col_nombre = buscar_columna(df, ["NOMBRE"])
-    col_editorial = buscar_columna(df, ["EDITORIAL"])
-    col_categoria = buscar_columna(df, ["CATEGORIA"])
-    col_precio = buscar_columna(df, ["COSTO"])
-
-    ahora = datetime.now()
-
-    ventas = []
-
-    for item in carrito:
-        fila = df[df[col_codigo] == item["codigo"]].index
-
-        if len(fila) > 0:
-            i = fila[0]
-
-            df.at[i, col_stock] -= item["cantidad"]
-
-            if col_ventas:
-                actual = df.at[i, col_ventas]
-                df.at[i, col_ventas] = (actual if pd.notna(actual) else 0) + item["cantidad"]
-
-            ventas.append({
-                "USUARIO": session["user"],
-                "CODIGO": item["codigo"],
-                "FECHA": ahora.strftime("%Y-%m-%d %H:%M:%S"),
-                "MES": ahora.strftime("%m"),
-                "AÑO": ahora.strftime("%Y"),
-                "METODO_PAGO": metodo.upper(),
-                "NOMBRE": df.at[i, col_nombre] if col_nombre else "",
-                "EDITORIAL": df.at[i, col_editorial] if col_editorial else "",
-                "CATEGORIA": df.at[i, col_categoria] if col_categoria else "",
-                "PRECIO UNITARIO": item["precio"],
-                "CANTIDAD": item["cantidad"],
-                "SUBTOTAL": item["subtotal"]
-            })
-
-    df.to_excel(ARCHIVO, index=False)
-
-    df_ventas = pd.DataFrame(ventas)
-
-    if os.path.exists(ARCHIVO_VENTAS):
-        df_existente = pd.read_excel(ARCHIVO_VENTAS)
-        df_ventas = pd.concat([df_existente, df_ventas], ignore_index=True)
-
-    df_ventas.to_excel(ARCHIVO_VENTAS, index=False)
-
-    session["carrito"] = []
-
-    return redirect("/")
-
-
-# =============================
-# 🚀 RUN (IMPORTANTE PARA WEB)
+# 🚀 RUN
 # =============================
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port)
