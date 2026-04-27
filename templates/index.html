@@ -4,148 +4,174 @@
     <title>Sistema de Ventas</title>
 
 <style>
-    body {
-        font-family: "Agency FB", Arial, sans-serif;
-        margin: 0;
-        background: #e5e7eb;
-        font-weight: 600;
-    }
+body {
+    font-family: "Agency FB", Arial, sans-serif;
+    margin: 0;
+    background: #e5e7eb;
+    font-weight: 600;
+}
 
-    header {
-        background: #1e3a8a;
-        color: white;
-        padding: 15px 30px;
-        display: flex;
-        align-items: center;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.25);
-    }
+/* HEADER */
+header {
+    background: #1e3a8a;
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.25);
+}
 
-    header img {
-        height: 50px;
-        margin-right: 15px;
-    }
+header img {
+    height: 50px;
+    margin-right: 15px;
+}
 
-    header h1 {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 700;
-    }
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
 
-    .container {
-        padding: 25px;
-    }
+/* LAYOUT */
+.container {
+    padding: 25px;
+}
 
-    .grid {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 20px;
-    }
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    align-items: start;
+}
 
-    .card {
-        background: #f8fafc;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0px 6px 18px rgba(0,0,0,0.1);
-    }
+/* CARD */
+.card {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0px 6px 18px rgba(0,0,0,0.1);
+}
 
-    h2 {
-        color: #1e3a8a;
-        font-size: 18px;
-        margin-bottom: 15px;
-    }
+h2 {
+    color: #1e3a8a;
+    margin-bottom: 15px;
+}
 
-    .form-row {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-    }
+/* FILTROS */
+.form-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
 
-    select, input {
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #cbd5e1;
-        background: #f1f5f9;
-        font-weight: 600;
-    }
+select {
+    flex: 1;
+}
 
-    .busqueda-box input {
-        width: 70%;
-        text-align: center;
-    }
+/* INPUTS */
+input, select {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #f1f5f9;
+    font-weight: 600;
+}
 
-    .cantidad-box input {
-        width: 200px;
-        text-align: center;
-    }
+.busqueda-box input {
+    width: 100%;
+    margin-bottom: 10px;
+    text-align: center;
+}
 
-    .boton-box {
-        display: flex;
-        justify-content: center;
-        margin-top: 12px;
-    }
+.cantidad-box input {
+    width: 100%;
+    margin-bottom: 10px;
+    text-align: center;
+}
 
-    .btn-agregar {
-        padding: 12px 40px;
-        border-radius: 8px;
-        background: #1d4ed8;
-        color: white;
-        border: none;
-        cursor: pointer;
-        font-weight: 700;
-    }
+/* BOTONES */
+.btn-agregar {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    background: #1d4ed8;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+}
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-    }
+.btn-agregar:hover {
+    opacity: 0.9;
+}
 
-    th {
-        background: #1e3a8a;
-        color: white;
-        padding: 10px;
-    }
+/* TABLA */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
 
-    td {
-        padding: 8px;
-    }
+th {
+    background: #1e3a8a;
+    color: white;
+    padding: 10px;
+    font-size: 14px;
+}
 
-    tr:nth-child(even) {
-        background: #eef2ff;
-    }
+td {
+    padding: 8px;
+    font-size: 13px;
+}
 
-    .btn-finalizar {
-        background: #16a34a;
-        padding: 10px;
-        color: white;
-        border: none;
-    }
+tr:nth-child(even) {
+    background: #eef2ff;
+}
 
-    .btn-yape {
-        background: #6d28d9;
-        padding: 10px;
-        color: white;
-        border: none;
-    }
+/* BOTONES ACCION */
+.btn-finalizar {
+    flex: 1;
+    background: #16a34a;
+    padding: 10px;
+    color: white;
+    border: none;
+    border-radius: 6px;
+}
 
-    .btn-eliminar {
-        background: red;
-        color: white;
-        border: none;
-        padding: 5px;
-    }
+.btn-yape {
+    flex: 1;
+    background: #6d28d9;
+    padding: 10px;
+    color: white;
+    border: none;
+    border-radius: 6px;
+}
 
-    .total {
-        font-size: 20px;
-        margin-top: 10px;
-    }
+.btn-eliminar {
+    background: red;
+    color: white;
+    border: none;
+    padding: 5px 8px;
+    border-radius: 4px;
+}
 
-    .botones-pago {
-        margin-top: 10px;
-        display: flex;
-        gap: 10px;
-    }
+/* TOTAL */
+.total {
+    font-size: 20px;
+    margin-top: 10px;
+    font-weight: bold;
+}
 
+/* PAGOS */
+.botones-pago {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+/* INVENTARIO */
+.inventario {
+    margin-top: 20px;
+}
 </style>
 </head>
 
@@ -160,7 +186,7 @@
 
 <div class="grid">
 
-<!-- 🔥 FILTROS + AGREGAR -->
+<!-- 🔥 IZQUIERDA -->
 <div class="card">
     <h2>AGREGAR PRODUCTO</h2>
 
@@ -183,7 +209,7 @@
         </div>
     </form>
 
-    <!-- BUSCAR + AGREGAR -->
+    <!-- AGREGAR -->
     <form action="/agregar" method="post">
         <div class="busqueda-box">
             <input type="text" name="codigo" placeholder="Código o nombre..." required>
@@ -193,13 +219,11 @@
             <input type="number" name="cantidad" placeholder="Cantidad" required>
         </div>
 
-        <div class="boton-box">
-            <button type="submit" class="btn-agregar">AGREGAR</button>
-        </div>
+        <button type="submit" class="btn-agregar">AGREGAR AL CARRITO</button>
     </form>
 </div>
 
-<!-- 🔥 CARRITO -->
+<!-- 🔥 DERECHA -->
 <div class="card">
     <h2>CARRITO</h2>
 
@@ -242,13 +266,12 @@
             <button class="btn-yape">YAPE</button>
         </a>
     </div>
-
 </div>
 
 </div>
 
 <!-- 🔥 INVENTARIO -->
-<div class="card">
+<div class="card inventario">
     <h2>INVENTARIO</h2>
     {{ tabla|safe }}
 </div>

@@ -128,7 +128,7 @@ def index():
 
 
 # =============================
-# ➕ AGREGAR AL CARRITO
+# ➕ AGREGAR
 # =============================
 
 @app.route("/agregar", methods=["POST"])
@@ -157,6 +157,9 @@ def agregar():
     col_nombre = buscar_columna(df, ["NOMBRE"])
     col_precio = buscar_columna(df, ["COSTO"])
     col_stock = buscar_columna(df, ["STOCK"])
+
+    if not all([col_codigo, col_nombre, col_precio, col_stock]):
+        return redirect("/")
 
     fila = df[
         (df[col_codigo].astype(str).str.upper() == codigo) |
@@ -190,7 +193,7 @@ def agregar():
 
 
 # =============================
-# ❌ ELIMINAR DEL CARRITO
+# ❌ ELIMINAR
 # =============================
 
 @app.route("/eliminar/<int:index>")
@@ -208,7 +211,7 @@ def eliminar(index):
 
 
 # =============================
-# 💰 FINALIZAR VENTA
+# 💰 FINALIZAR
 # =============================
 
 @app.route("/finalizar/<metodo>")
@@ -227,6 +230,7 @@ def finalizar(metodo):
     col_codigo = buscar_columna(df, ["CODIGO"])
     col_stock = buscar_columna(df, ["STOCK"])
     col_nombre = buscar_columna(df, ["NOMBRE"])
+    col_ventas = buscar_columna(df, ["VENTA"])  # 🔥 CLAVE
 
     ahora = datetime.now()
 
@@ -238,8 +242,16 @@ def finalizar(metodo):
         if len(fila) > 0:
             i = fila[0]
 
-            # 🔻 restar stock
+            # 🔻 STOCK
             df.at[i, col_stock] -= item["cantidad"]
+
+            # 🔥 SUMAR VENTAS
+            if col_ventas:
+                actual = df.at[i, col_ventas]
+                try:
+                    df.at[i, col_ventas] = (actual if pd.notna(actual) else 0) + item["cantidad"]
+                except:
+                    df.at[i, col_ventas] = item["cantidad"]
 
             ventas.append({
                 "USUARIO": session["user"],
@@ -253,10 +265,10 @@ def finalizar(metodo):
                 "AÑO": ahora.strftime("%Y")
             })
 
-    # 💾 guardar inventario
+    # 💾 INVENTARIO
     df.to_excel(ARCHIVO, index=False)
 
-    # 💾 guardar ventas
+    # 💾 VENTAS
     df_ventas = pd.DataFrame(ventas)
 
     if os.path.exists(ARCHIVO_VENTAS):
