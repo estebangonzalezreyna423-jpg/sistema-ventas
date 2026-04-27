@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Ventas</title>
+    <title>Sistema de Ventas</title>
 
 <style>
 body {
-    font-family: Arial;
+    font-family: Arial, sans-serif;
     margin: 0;
     background: #eef2f7;
 }
@@ -24,11 +24,28 @@ header h1 {
     margin: 0;
 }
 
+.usuario {
+    font-size: 14px;
+}
+
+.usuario a {
+    color: white;
+    margin-left: 10px;
+    text-decoration: none;
+}
+
+/* LAYOUT */
 .container {
     padding: 20px;
 }
 
-/* CARD */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+}
+
+/* CARDS */
 .card {
     background: white;
     padding: 20px;
@@ -36,29 +53,77 @@ header h1 {
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
+/* INPUTS */
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
 /* BOTONES */
-.btn {
-    padding: 10px 12px;
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.btn-agregar {
+    width: 100%;
+    background: #2563eb;
+    color: white;
+}
+
+.btn-eliminar {
+    background: red;
+    color: white;
+    padding: 5px 8px;
+}
+
+.btn-finalizar {
+    background: #16a34a;
+    color: white;
+    width: 100%;
+}
+
+.btn-yape {
+    background: #6d28d9;
+    color: white;
+    width: 100%;
+}
+
+/* BOTONES ENLACE (CORREGIDOS) */
+.btn-link {
+    display: inline-block;
+    padding: 8px 12px;
     border-radius: 6px;
     text-decoration: none;
     color: white;
     margin-left: 10px;
-    display: inline-block;
 }
 
-.btn-back {
-    background: #2563eb;
+.btn-ventas {
+    background: #f59e0b;
 }
 
-.btn-download {
-    background: #16a34a;
+.btn-descargar {
+    background: #10b981;
+}
+
+.btn-ver {
+    background: #0ea5e9;
 }
 
 /* TABLA */
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 15px;
 }
 
 th {
@@ -78,48 +143,153 @@ tr:nth-child(even) {
 
 /* TOTAL */
 .total {
-    margin-top: 15px;
-    font-size: 22px;
+    font-size: 20px;
+    margin-top: 10px;
     font-weight: bold;
-    color: #111;
 }
 
-/* TOP BAR */
-.topbar {
+/* BOTONES PAGO */
+.botones-pago {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* INVENTARIO */
+.inventario {
+    margin-top: 20px;
+}
+
+/* FILTROS */
+.filtros {
+    display: flex;
+    gap: 10px;
+}
+
+/* TOP ACTIONS */
+.top-actions {
     display: flex;
     justify-content: space-between;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.acciones-superiores {
+    display: flex;
     align-items: center;
 }
 </style>
-
 </head>
 
 <body>
 
 <header>
-    <h1>📊 VENTAS</h1>
+    <h1>SISTEMA DE VENTAS</h1>
 
-    <div>
-        <a href="/" class="btn btn-back">⬅ Regresar</a>
-        <a href="/descargar_ventas" class="btn btn-download">📥 Descargar Excel</a>
+    <div class="usuario">
+        Usuario: {{ usuario }}
+        <a href="/ventas" class="btn-link btn-ventas">📊 Ventas</a>
+        <a href="/logout" class="btn-link">Cerrar sesión</a>
     </div>
 </header>
 
 <div class="container">
 
-    <div class="card">
+<div class="grid">
 
-        <div class="topbar">
-            <h2>Registro de ventas</h2>
+<!-- IZQUIERDA -->
+<div class="card">
+    <h2>Agregar Producto</h2>
+
+    <!-- FILTROS -->
+    <form method="get">
+        <div class="filtros">
+            <select name="editorial" onchange="this.form.submit()">
+                <option value="">Editorial</option>
+                {% for e in editoriales %}
+                    <option value="{{ e }}" {% if e == editorial_actual %}selected{% endif %}>{{ e }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="categoria" onchange="this.form.submit()">
+                <option value="">Categoría</option>
+                {% for c in categorias %}
+                    <option value="{{ c }}" {% if c == categoria_actual %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
         </div>
+    </form>
 
-        {{ tabla | safe }}
+    <!-- ACCIONES -->
+    <div class="top-actions">
+        <a href="/" class="btn-link btn-ver">Limpiar filtros</a>
 
-        <div class="total">
-            💰 Total vendido: S/ {{ total }}
+        <div class="acciones-superiores">
+            <a href="/ventas" class="btn-link btn-ventas">📊 Ver ventas</a>
+            <a href="/descargar_ventas" class="btn-link btn-descargar">📥 Excel</a>
         </div>
-
     </div>
+
+    <!-- AGREGAR -->
+    <form action="/agregar" method="post">
+        <input type="text" name="codigo" placeholder="Código o nombre" required>
+        <input type="number" name="cantidad" min="1" required>
+        <button type="submit" class="btn-agregar">Agregar al carrito</button>
+    </form>
+</div>
+
+<!-- DERECHA -->
+<div class="card">
+    <h2>Carrito</h2>
+
+    <table>
+        <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Precio</th>
+            <th>Cant.</th>
+            <th>Total</th>
+            <th></th>
+        </tr>
+
+        {% for item in carrito %}
+        <tr>
+            <td>{{ item.codigo }}</td>
+            <td>{{ item.nombre }}</td>
+            <td>S/ {{ item.precio }}</td>
+            <td>{{ item.cantidad }}</td>
+            <td>S/ {{ item.subtotal }}</td>
+            <td>
+                <a href="/eliminar/{{ loop.index0 }}">
+                    <button type="button" class="btn-eliminar">X</button>
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="total">
+        Total: S/ {{ total }}
+    </div>
+
+    <div class="botones-pago">
+        <a href="/finalizar/efectivo">
+            <button type="button" class="btn-finalizar">Efectivo</button>
+        </a>
+
+        <a href="/finalizar/yape">
+            <button type="button" class="btn-yape">Yape</button>
+        </a>
+    </div>
+</div>
+
+</div>
+
+<!-- INVENTARIO -->
+<div class="card inventario">
+    <h2>Inventario</h2>
+    {{ tabla|safe }}
+</div>
 
 </div>
 

@@ -7,13 +7,9 @@ import psycopg2
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "clave_super_segura_123")
 
-# 📁 ARCHIVOS
 ARCHIVO = "inventario.xlsx"
-
-# 🗄️ DB
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# 👤 USUARIOS
 USUARIOS = {
     "PC1": "123",
     "PC2": "123",
@@ -21,7 +17,7 @@ USUARIOS = {
 }
 
 # =============================
-# 🔧 CONEXIÓN DB
+# DB
 # =============================
 def get_conn():
     if not DATABASE_URL:
@@ -54,7 +50,7 @@ def init_db():
 
 
 # =============================
-# 🔧 UTILIDADES
+# UTILIDADES SEGURAS
 # =============================
 def cargar_excel():
     if not os.path.exists(ARCHIVO):
@@ -64,14 +60,20 @@ def cargar_excel():
         for i in range(10):
             df = pd.read_excel(ARCHIVO, header=i)
             df.columns = df.columns.str.strip().str.upper()
+
             if "CODIGO" in df.columns:
                 return df
+
         return pd.DataFrame()
+
     except:
         return pd.DataFrame()
 
 
 def buscar_columna(df, palabras):
+    if df is None or df.empty:
+        return None
+
     for col in df.columns:
         for p in palabras:
             if p in col:
@@ -80,7 +82,9 @@ def buscar_columna(df, palabras):
 
 
 def limpiar_texto(valor):
-    return str(valor).strip().upper() if valor else ""
+    if valor is None:
+        return ""
+    return str(valor).strip().upper()
 
 
 def login_requerido():
@@ -88,7 +92,7 @@ def login_requerido():
 
 
 # =============================
-# 🔐 LOGIN
+# LOGIN
 # =============================
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -113,7 +117,7 @@ def logout():
 
 
 # =============================
-# 🏠 INDEX
+# INDEX (ARREGLADO)
 # =============================
 @app.route("/")
 def index():
@@ -121,27 +125,31 @@ def index():
         return redirect("/login")
 
     df = cargar_excel()
-    if df.empty:
-        return "❌ No hay inventario"
 
     carrito = session.get("carrito", [])
-    total = sum(item["subtotal"] for item in carrito)
+    total = sum(item.get("subtotal", 0) for item in carrito)
 
     col_editorial = buscar_columna(df, ["EDITORIAL"])
     col_categoria = buscar_columna(df, ["CATEGORIA"])
 
-    editoriales = sorted(df[col_editorial].dropna().astype(str).str.upper().unique()) if col_editorial else []
-    categorias = sorted(df[col_categoria].dropna().astype(str).str.upper().unique()) if col_categoria else []
+    editoriales = []
+    categorias = []
+
+    if col_editorial:
+        editoriales = sorted(df[col_editorial].dropna().astype(str).str.upper().unique())
+
+    if col_categoria:
+        categorias = sorted(df[col_categoria].dropna().astype(str).str.upper().unique())
 
     editorial_filtro = limpiar_texto(request.args.get("editorial"))
     categoria_filtro = limpiar_texto(request.args.get("categoria"))
 
     df_filtrado = df.copy()
 
-    if editorial_filtro and col_editorial:
+    if col_editorial and editorial_filtro:
         df_filtrado = df_filtrado[df_filtrado[col_editorial].astype(str).str.upper() == editorial_filtro]
 
-    if categoria_filtro and col_categoria:
+    if col_categoria and categoria_filtro:
         df_filtrado = df_filtrado[df_filtrado[col_categoria].astype(str).str.upper() == categoria_filtro]
 
     return render_template(
@@ -158,7 +166,7 @@ def index():
 
 
 # =============================
-# ➕ AGREGAR
+# AGREGAR (ARREGLADO - EVITA CRASH)
 # =============================
 @app.route("/agregar", methods=["POST"])
 def agregar():
@@ -176,6 +184,10 @@ def agregar():
     col_precio = buscar_columna(df, ["COSTO"])
     col_stock = buscar_columna(df, ["STOCK"])
 
+    # 🔥 SI NO HAY COLUMNAS, NO ROMPE
+    if not all([col_codigo, col_nombre, col_precio, col_stock]):
+        return redirect("/")
+
     fila = df[
         (df[col_codigo].astype(str).str.upper() == codigo) |
         (df[col_nombre].astype(str).str.upper().str.contains(codigo, na=False))
@@ -186,8 +198,11 @@ def agregar():
 
     producto = fila.iloc[0]
 
-    precio = float(str(producto[col_precio]).replace("S/", "").strip())
-    stock = float(producto[col_stock])
+    try:
+        precio = float(str(producto[col_precio]).replace("S/", "").strip())
+        stock = float(producto[col_stock])
+    except:
+        return redirect("/")
 
     if stock < cantidad:
         return redirect("/")
@@ -205,7 +220,7 @@ def agregar():
 
 
 # =============================
-# ❌ ELIMINAR
+# ELIMINAR
 # =============================
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
@@ -219,7 +234,7 @@ def eliminar(index):
 
 
 # =============================
-# 💰 FINALIZAR
+# FINALIZAR
 # =============================
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
@@ -237,33 +252,28 @@ def finalizar(metodo):
     col_codigo = buscar_columna(df, ["CODIGO"])
     col_stock = buscar_columna(df, ["STOCK"])
     col_nombre = buscar_columna(df, ["NOMBRE"])
-    col_ventas = buscar_columna(df, ["VENTA"])
 
     for item in carrito:
-        fila = df[df[col_codigo] == item["codigo"]].index
+        if col_codigo and col_stock:
+            fila = df[df[col_codigo] == item["codigo"]].index
 
-        if len(fila) > 0:
-            i = fila[0]
+            if len(fila) > 0:
+                i = fila[0]
+                df.at[i, col_stock] -= item["cantidad"]
 
-            df.at[i, col_stock] -= item["cantidad"]
-
-            if col_ventas:
-                actual = df.at[i, col_ventas]
-                df.at[i, col_ventas] = (actual if pd.notna(actual) else 0) + item["cantidad"]
-
-            if cur:
-                cur.execute("""
-                    INSERT INTO ventas (usuario, codigo, nombre, cantidad, subtotal, metodo, fecha)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s)
-                """, (
-                    session["user"],
-                    item["codigo"],
-                    df.at[i, col_nombre],
-                    item["cantidad"],
-                    item["subtotal"],
-                    metodo.upper(),
-                    ahora
-                ))
+                if cur:
+                    cur.execute("""
+                        INSERT INTO ventas (usuario, codigo, nombre, cantidad, subtotal, metodo, fecha)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s)
+                    """, (
+                        session["user"],
+                        item["codigo"],
+                        item["nombre"],
+                        item["cantidad"],
+                        item["subtotal"],
+                        metodo.upper(),
+                        ahora
+                    ))
 
     if conn:
         conn.commit()
@@ -277,7 +287,7 @@ def finalizar(metodo):
 
 
 # =============================
-# 📊 VER VENTAS (MEJORADO)
+# VENTAS (SEGURO)
 # =============================
 @app.route("/ventas")
 def ver_ventas():
@@ -288,7 +298,7 @@ def ver_ventas():
         conn = get_conn()
 
         if not conn:
-            return "❌ No hay conexión a la base de datos"
+            return "❌ Sin base de datos"
 
         df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
         conn.close()
@@ -302,18 +312,18 @@ def ver_ventas():
             usuario=session.get("user")
         )
 
-    except Exception as e:
-        return f"❌ Error en ventas: {str(e)}"
+    except:
+        return "❌ Error cargando ventas"
 
 
 # =============================
-# 📥 DESCARGAR EXCEL
+# DESCARGAR EXCEL
 # =============================
 @app.route("/descargar_ventas")
 def descargar_ventas():
     conn = get_conn()
     if not conn:
-        return "❌ No hay conexión"
+        return "❌ Sin conexión"
 
     df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
     conn.close()
@@ -325,10 +335,9 @@ def descargar_ventas():
 
 
 # =============================
-# 🚀 INIT DB
+# INIT
 # =============================
 init_db()
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
