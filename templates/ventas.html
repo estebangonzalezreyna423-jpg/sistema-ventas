@@ -1,0 +1,6 @@
+return render_template(
+    "ventas.html",
+    tabla=df.to_html(...),
+    total=total,
+    usuario=session.get("user")
+)
