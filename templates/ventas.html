@@ -1,6 +1,118 @@
-return render_template(
-    "ventas.html",
-    tabla=df.to_html(...),
-    total=total,
-    usuario=session.get("user")
-)
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ventas</title>
+
+<style>
+body {
+    font-family: Arial;
+    margin: 0;
+    background: #eef2f7;
+}
+
+/* HEADER */
+header {
+    background: #1e3a8a;
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+}
+
+.container {
+    padding: 20px;
+}
+
+/* CARD */
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* BOTONES */
+.btn {
+    padding: 10px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: white;
+    margin-left: 10px;
+    display: inline-block;
+}
+
+.btn-back {
+    background: #2563eb;
+}
+
+.btn-download {
+    background: #16a34a;
+}
+
+/* TABLA */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th {
+    background: #1e3a8a;
+    color: white;
+    padding: 8px;
+}
+
+td {
+    padding: 8px;
+    text-align: center;
+}
+
+tr:nth-child(even) {
+    background: #f1f5f9;
+}
+
+/* TOTAL */
+.total {
+    margin-top: 15px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #111;
+}
+</style>
+
+</head>
+
+<body>
+
+<header>
+    <h1>📊 VENTAS</h1>
+
+    <div>
+        <a href="/" class="btn btn-back">⬅ Volver</a>
+        <a href="/descargar_ventas" class="btn btn-download">📥 Excel</a>
+    </div>
+</header>
+
+<div class="container">
+
+    <div class="card">
+
+        <h2>Registro de ventas</h2>
+
+        {{ tabla | safe }}
+
+        <div class="total">
+            💰 Total vendido: S/ {{ total }}
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
