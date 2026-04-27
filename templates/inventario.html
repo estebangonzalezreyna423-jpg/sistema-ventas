@@ -2,37 +2,100 @@
 <html>
 <head>
     <title>Inventario</title>
-    <style>
-        body { font-family: Arial; background:#eef2f7; margin:0; }
-        header { background:#1e3a8a; color:white; padding:15px; }
-        .container { padding:20px; }
-        .card { background:white; padding:20px; border-radius:10px; }
-        input { padding:10px; margin:5px 0; width:100%; }
-        button { padding:10px; background:#2563eb; color:white; border:none; width:100%; }
-        table { width:100%; margin-top:20px; border-collapse:collapse; }
-        th { background:#1e3a8a; color:white; }
-        td, th { padding:8px; text-align:center; }
-    </style>
+
+<style>
+body {
+    font-family: Arial;
+    margin: 0;
+    background: #eef2f7;
+}
+
+header {
+    background: #1e3a8a;
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.container {
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th {
+    background: #1e3a8a;
+    color: white;
+    padding: 8px;
+}
+
+td {
+    text-align: center;
+    padding: 8px;
+}
+
+input {
+    padding: 6px;
+    width: 100%;
+}
+
+button {
+    background: #16a34a;
+    color: white;
+    padding: 8px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+}
+</style>
+
 </head>
+
 <body>
 
 <header>
-    <h1>📦 INVENTARIO</h1>
+    <h1>INVENTARIO</h1>
+
+    <div>
+        Usuario: {{ usuario }}
+        <a href="/" style="color:white; margin-left:10px;">Volver</a>
+    </div>
 </header>
 
 <div class="container">
 
 <div class="card">
 
-<h2>Editar Stock</h2>
+<h2>Editar Inventario (solo PC1)</h2>
 
-<form method="post">
-    <input name="codigo" placeholder="Código del producto" required>
-    <input name="stock" type="number" placeholder="Nuevo stock" required>
+{% if usuario == "PC1" %}
+<form method="POST" action="/inventario/actualizar">
+
+    <input type="text" name="codigo" placeholder="Código del producto" required>
+    <input type="number" name="stock" placeholder="Nuevo stock">
+    <input type="number" name="precio" placeholder="Nuevo precio">
+
     <button type="submit">Actualizar</button>
 </form>
+{% else %}
+<p>🔒 Solo PC1 puede editar el inventario</p>
+{% endif %}
 
-<h2>Lista</h2>
+<hr>
+
+<h3>Lista de productos</h3>
+
 {{ tabla|safe }}
 
 </div>

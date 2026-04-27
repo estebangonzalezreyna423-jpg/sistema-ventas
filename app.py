@@ -61,12 +61,9 @@ def cargar_excel():
         return pd.DataFrame()
 
     try:
-        for i in range(10):
-            df = pd.read_excel(ARCHIVO, header=i)
-            df.columns = df.columns.str.strip().str.upper()
-            if "CODIGO" in df.columns:
-                return df
-        return pd.DataFrame()
+        df = pd.read_excel(ARCHIVO)
+        df.columns = df.columns.astype(str).str.strip().str.upper()
+        return df
     except:
         return pd.DataFrame()
 
@@ -114,7 +111,7 @@ def logout():
 
 
 # =============================
-# INDEX (FILTROS ESTABLES)
+# INDEX
 # =============================
 @app.route("/")
 def index():
@@ -135,14 +132,10 @@ def index():
     df_filtrado = df.copy()
 
     if col_editorial and editorial_filtro:
-        df_filtrado = df_filtrado[
-            df_filtrado[col_editorial].astype(str).str.upper() == editorial_filtro
-        ]
+        df_filtrado = df_filtrado[df_filtrado[col_editorial].astype(str).str.upper() == editorial_filtro]
 
     if col_categoria and categoria_filtro:
-        df_filtrado = df_filtrado[
-            df_filtrado[col_categoria].astype(str).str.upper() == categoria_filtro
-        ]
+        df_filtrado = df_filtrado[df_filtrado[col_categoria].astype(str).str.upper() == categoria_filtro]
 
     editoriales = sorted(df[col_editorial].dropna().astype(str).str.upper().unique()) if col_editorial else []
     categorias = sorted(df[col_categoria].dropna().astype(str).str.upper().unique()) if col_categoria else []
@@ -158,6 +151,60 @@ def index():
         categoria_actual=categoria_filtro,
         usuario=session.get("user")
     )
+
+
+# =============================
+# INVENTARIO (NUEVO)
+# =============================
+@app.route("/inventario")
+def inventario():
+    if login_requerido():
+        return redirect("/login")
+
+    df = cargar_excel()
+
+    return render_template(
+        "inventario.html",
+        tabla=df.to_html(index=False, classes="tabla"),
+        usuario=session.get("user")
+    )
+
+
+@app.route("/inventario/actualizar", methods=["POST"])
+def actualizar_inventario():
+    if login_requerido():
+        return redirect("/login")
+
+    if session.get("user") != "PC1":
+        return redirect("/inventario")
+
+    df = cargar_excel()
+
+    codigo = limpiar_texto(request.form.get("codigo"))
+    stock = request.form.get("stock")
+    precio = request.form.get("precio")
+
+    col_codigo = buscar_columna(df, ["CODIGO"])
+    col_stock = buscar_columna(df, ["STOCK"])
+    col_precio = buscar_columna(df, ["COSTO"])
+
+    if not col_codigo:
+        return redirect("/inventario")
+
+    idx = df[df[col_codigo].astype(str).str.upper() == codigo].index
+
+    if len(idx) > 0:
+        i = idx[0]
+
+        if stock:
+            df.at[i, col_stock] = float(stock)
+
+        if col_precio and precio:
+            df.at[i, col_precio] = float(precio)
+
+        df.to_excel(ARCHIVO, index=False)
+
+    return redirect("/inventario")
 
 
 # =============================
@@ -178,9 +225,6 @@ def agregar():
     col_nombre = buscar_columna(df, ["NOMBRE"])
     col_precio = buscar_columna(df, ["COSTO"])
     col_stock = buscar_columna(df, ["STOCK"])
-
-    if not all([col_codigo, col_nombre, col_precio, col_stock]):
-        return redirect("/")
 
     fila = df[
         (df[col_codigo].astype(str).str.upper() == codigo) |
@@ -209,18 +253,6 @@ def agregar():
         "subtotal": precio * cantidad
     })
 
-    session["carrito"] = carrito
-    return redirect("/")
-
-
-# =============================
-# ELIMINAR
-# =============================
-@app.route("/eliminar/<int:index>")
-def eliminar(index):
-    carrito = session.get("carrito", [])
-    if 0 <= index < len(carrito):
-        carrito.pop(index)
     session["carrito"] = carrito
     return redirect("/")
 
