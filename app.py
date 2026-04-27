@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, session
 import pandas as pd
 from datetime import datetime
 import os
+import psycopg2
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "clave_super_segura_123")
@@ -9,6 +10,9 @@ app.secret_key = os.environ.get("SECRET_KEY", "clave_super_segura_123")
 # 📁 ARCHIVOS
 ARCHIVO = "inventario.xlsx"
 ARCHIVO_VENTAS = "ventas.xlsx"
+
+# 🗄️ BASE DE DATOS
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 # 👤 USUARIOS
 USUARIOS = {
@@ -35,7 +39,8 @@ def cargar_excel():
                 return df
 
         return pd.DataFrame()
-    except:
+    except Exception as e:
+        print("Error leyendo Excel:", e)
         return pd.DataFrame()
 
 
@@ -53,6 +58,53 @@ def limpiar_texto(valor):
 
 def login_requerido():
     return "user" not in session
+
+
+# =============================
+# 🗄️ BASE DE DATOS
+# =============================
+
+def guardar_venta_db(venta):
+    if not DATABASE_URL:
+        print("⚠️ No hay DATABASE_URL")
+        return
+
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ventas (
+                id SERIAL PRIMARY KEY,
+                usuario TEXT,
+                codigo TEXT,
+                nombre TEXT,
+                cantidad INT,
+                subtotal FLOAT,
+                metodo TEXT,
+                fecha TIMESTAMP
+            )
+        """)
+
+        cursor.execute("""
+            INSERT INTO ventas (usuario, codigo, nombre, cantidad, subtotal, metodo, fecha)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            venta["USUARIO"],
+            venta["CODIGO"],
+            venta["NOMBRE"],
+            venta["CANTIDAD"],
+            venta["SUBTOTAL"],
+            venta["METODO"],
+            venta["FECHA"]
+        ))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+    except Exception as e:
+        print("❌ Error DB:", e)
 
 
 # =============================
@@ -82,7 +134,7 @@ def logout():
 
 
 # =============================
-# 🏠 INDEX (FILTROS)
+# 🏠 INDEX
 # =============================
 
 @app.route("/")
@@ -144,9 +196,6 @@ def agregar():
 
     codigo = limpiar_texto(request.form.get("codigo"))
     cantidad = request.form.get("cantidad")
-
-    if not codigo or not cantidad:
-        return redirect("/")
 
     try:
         cantidad = int(cantidad)
@@ -211,7 +260,7 @@ def eliminar(index):
 
 
 # =============================
-# 💰 FINALIZAR
+# 💰 FINALIZAR VENTA
 # =============================
 
 @app.route("/finalizar/<metodo>")
@@ -230,10 +279,9 @@ def finalizar(metodo):
     col_codigo = buscar_columna(df, ["CODIGO"])
     col_stock = buscar_columna(df, ["STOCK"])
     col_nombre = buscar_columna(df, ["NOMBRE"])
-    col_ventas = buscar_columna(df, ["VENTA"])  # 🔥 CLAVE
+    col_ventas = buscar_columna(df, ["VENTA"])
 
     ahora = datetime.now()
-
     ventas = []
 
     for item in carrito:
@@ -248,27 +296,27 @@ def finalizar(metodo):
             # 🔥 SUMAR VENTAS
             if col_ventas:
                 actual = df.at[i, col_ventas]
-                try:
-                    df.at[i, col_ventas] = (actual if pd.notna(actual) else 0) + item["cantidad"]
-                except:
-                    df.at[i, col_ventas] = item["cantidad"]
+                df.at[i, col_ventas] = (actual if pd.notna(actual) else 0) + item["cantidad"]
 
-            ventas.append({
+            venta = {
                 "USUARIO": session["user"],
                 "CODIGO": item["codigo"],
                 "NOMBRE": df.at[i, col_nombre] if col_nombre else "",
                 "CANTIDAD": item["cantidad"],
                 "SUBTOTAL": item["subtotal"],
                 "METODO": metodo.upper(),
-                "FECHA": ahora.strftime("%Y-%m-%d %H:%M:%S"),
-                "MES": ahora.strftime("%m"),
-                "AÑO": ahora.strftime("%Y")
-            })
+                "FECHA": ahora
+            }
+
+            ventas.append(venta)
+
+            # 🔥 GUARDAR EN DB
+            guardar_venta_db(venta)
 
     # 💾 INVENTARIO
     df.to_excel(ARCHIVO, index=False)
 
-    # 💾 VENTAS
+    # 💾 EXCEL VENTAS
     df_ventas = pd.DataFrame(ventas)
 
     if os.path.exists(ARCHIVO_VENTAS):
@@ -288,4 +336,4 @@ def finalizar(metodo):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port)

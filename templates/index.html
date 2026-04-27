@@ -5,10 +5,9 @@
 
 <style>
 body {
-    font-family: "Agency FB", Arial, sans-serif;
+    font-family: Arial, sans-serif;
     margin: 0;
-    background: #e5e7eb;
-    font-weight: 600;
+    background: #eef2f7;
 }
 
 /* HEADER */
@@ -17,141 +16,97 @@ header {
     color: white;
     padding: 15px 30px;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.25);
-}
-
-header img {
-    height: 50px;
-    margin-right: 15px;
 }
 
 header h1 {
     margin: 0;
-    font-size: 24px;
+}
+
+.usuario {
+    font-size: 14px;
 }
 
 /* LAYOUT */
 .container {
-    padding: 25px;
+    padding: 20px;
 }
 
 .grid {
     display: grid;
     grid-template-columns: 1fr 2fr;
     gap: 20px;
-    align-items: start;
 }
 
-/* CARD */
+/* CARDS */
 .card {
-    background: #f8fafc;
+    background: white;
     padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0px 6px 18px rgba(0,0,0,0.1);
-}
-
-h2 {
-    color: #1e3a8a;
-    margin-bottom: 15px;
-}
-
-/* FILTROS */
-.form-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-select {
-    flex: 1;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
 /* INPUTS */
 input, select {
+    width: 100%;
     padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #cbd5e1;
-    background: #f1f5f9;
-    font-weight: 600;
-}
-
-.busqueda-box input {
-    width: 100%;
     margin-bottom: 10px;
-    text-align: center;
-}
-
-.cantidad-box input {
-    width: 100%;
-    margin-bottom: 10px;
-    text-align: center;
+    border-radius: 6px;
+    border: 1px solid #ccc;
 }
 
 /* BOTONES */
-.btn-agregar {
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    background: #1d4ed8;
-    color: white;
+button {
+    padding: 10px;
     border: none;
+    border-radius: 6px;
     cursor: pointer;
-    font-weight: 700;
 }
 
-.btn-agregar:hover {
-    opacity: 0.9;
+.btn-agregar {
+    width: 100%;
+    background: #2563eb;
+    color: white;
+}
+
+.btn-eliminar {
+    background: red;
+    color: white;
+    padding: 5px 8px;
+}
+
+.btn-finalizar {
+    background: #16a34a;
+    color: white;
+    width: 100%;
+}
+
+.btn-yape {
+    background: #6d28d9;
+    color: white;
+    width: 100%;
 }
 
 /* TABLA */
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
 }
 
 th {
     background: #1e3a8a;
     color: white;
-    padding: 10px;
-    font-size: 14px;
+    padding: 8px;
 }
 
 td {
     padding: 8px;
-    font-size: 13px;
+    text-align: center;
 }
 
 tr:nth-child(even) {
-    background: #eef2ff;
-}
-
-/* BOTONES ACCION */
-.btn-finalizar {
-    flex: 1;
-    background: #16a34a;
-    padding: 10px;
-    color: white;
-    border: none;
-    border-radius: 6px;
-}
-
-.btn-yape {
-    flex: 1;
-    background: #6d28d9;
-    padding: 10px;
-    color: white;
-    border: none;
-    border-radius: 6px;
-}
-
-.btn-eliminar {
-    background: red;
-    color: white;
-    border: none;
-    padding: 5px 8px;
-    border-radius: 4px;
+    background: #f1f5f9;
 }
 
 /* TOTAL */
@@ -163,14 +118,20 @@ tr:nth-child(even) {
 
 /* PAGOS */
 .botones-pago {
-    margin-top: 10px;
     display: flex;
     gap: 10px;
+    margin-top: 10px;
 }
 
 /* INVENTARIO */
 .inventario {
     margin-top: 20px;
+}
+
+/* FILTROS */
+.filtros {
+    display: flex;
+    gap: 10px;
 }
 </style>
 </head>
@@ -178,21 +139,24 @@ tr:nth-child(even) {
 <body>
 
 <header>
-    <img src="https://yt3.googleusercontent.com/ytc/AIdro_k-fPS9Xt75ReX2p3TPb8kFAOml2N-cvmj7p1e1Q8w05xc=s900-c-k-c0x00ffffff-no-rj">
     <h1>SISTEMA DE VENTAS</h1>
+    <div class="usuario">
+        Usuario: {{ usuario }} |
+        <a href="/logout" style="color:white;">Cerrar sesión</a>
+    </div>
 </header>
 
 <div class="container">
 
 <div class="grid">
 
-<!-- 🔥 IZQUIERDA -->
+<!-- IZQUIERDA -->
 <div class="card">
-    <h2>AGREGAR PRODUCTO</h2>
+    <h2>Agregar Producto</h2>
 
     <!-- FILTROS -->
     <form method="get">
-        <div class="form-row">
+        <div class="filtros">
             <select name="editorial" onchange="this.form.submit()">
                 <option value="">Editorial</option>
                 {% for e in editoriales %}
@@ -211,21 +175,15 @@ tr:nth-child(even) {
 
     <!-- AGREGAR -->
     <form action="/agregar" method="post">
-        <div class="busqueda-box">
-            <input type="text" name="codigo" placeholder="Código o nombre..." required>
-        </div>
-
-        <div class="cantidad-box">
-            <input type="number" name="cantidad" placeholder="Cantidad" required>
-        </div>
-
-        <button type="submit" class="btn-agregar">AGREGAR AL CARRITO</button>
+        <input type="text" name="codigo" placeholder="Código o nombre del producto" required>
+        <input type="number" name="cantidad" placeholder="Cantidad" required>
+        <button type="submit" class="btn-agregar">Agregar al carrito</button>
     </form>
 </div>
 
-<!-- 🔥 DERECHA -->
+<!-- DERECHA -->
 <div class="card">
-    <h2>CARRITO</h2>
+    <h2>Carrito</h2>
 
     <table>
         <tr>
@@ -245,9 +203,9 @@ tr:nth-child(even) {
             <td>{{ item.cantidad }}</td>
             <td>S/ {{ item.subtotal }}</td>
             <td>
-                <a href="/eliminar/{{ loop.index0 }}">
+                <form action="/eliminar/{{ loop.index0 }}" method="get">
                     <button class="btn-eliminar">X</button>
-                </a>
+                </form>
             </td>
         </tr>
         {% endfor %}
@@ -258,21 +216,21 @@ tr:nth-child(even) {
     </div>
 
     <div class="botones-pago">
-        <a href="/finalizar/efectivo">
-            <button class="btn-finalizar">EFECTIVO</button>
-        </a>
+        <form action="/finalizar/efectivo" method="get">
+            <button class="btn-finalizar">Efectivo</button>
+        </form>
 
-        <a href="/finalizar/yape">
-            <button class="btn-yape">YAPE</button>
-        </a>
+        <form action="/finalizar/yape" method="get">
+            <button class="btn-yape">Yape</button>
+        </form>
     </div>
 </div>
 
 </div>
 
-<!-- 🔥 INVENTARIO -->
+<!-- INVENTARIO -->
 <div class="card inventario">
-    <h2>INVENTARIO</h2>
+    <h2>Inventario</h2>
     {{ tabla|safe }}
 </div>
 
