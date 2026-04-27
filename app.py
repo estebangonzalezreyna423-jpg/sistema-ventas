@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, send_file
 import pandas as pd
 from datetime import datetime
 import os
@@ -9,7 +9,6 @@ app.secret_key = os.environ.get("SECRET_KEY", "clave_super_segura_123")
 
 # 📁 ARCHIVOS
 ARCHIVO = "inventario.xlsx"
-ARCHIVO_VENTAS = "ventas.xlsx"
 
 # 🗄️ DB
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -22,12 +21,13 @@ USUARIOS = {
 }
 
 # =============================
-# 🔧 CONEXIÓN DB (MEJORADA)
+# 🔧 CONEXIÓN DB
 # =============================
 def get_conn():
     if not DATABASE_URL:
         return None
     return psycopg2.connect(DATABASE_URL)
+
 
 def init_db():
     conn = get_conn()
@@ -52,8 +52,9 @@ def init_db():
     cur.close()
     conn.close()
 
+
 # =============================
-# 🔧 FUNCIONES
+# 🔧 UTILIDADES
 # =============================
 def cargar_excel():
     if not os.path.exists(ARCHIVO):
@@ -276,22 +277,50 @@ def finalizar(metodo):
 
 
 # =============================
-# 📊 VER VENTAS (🔥 CLAVE)
+# 📊 VER VENTAS (MEJORADO)
 # =============================
 @app.route("/ventas")
 def ver_ventas():
+    if login_requerido():
+        return redirect("/login")
+
     conn = get_conn()
     if not conn:
-        return "❌ No hay DB"
+        return "❌ No hay conexión a base de datos"
 
     df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
     conn.close()
 
-    return df.to_html(index=False)
+    total = df["subtotal"].sum() if not df.empty else 0
+
+    return render_template(
+        "ventas.html",
+        tabla=df.to_html(index=False, classes="tabla"),
+        total=total,
+        usuario=session.get("user")
+    )
 
 
 # =============================
-# 🚀 INIT
+# 📥 DESCARGAR EXCEL
+# =============================
+@app.route("/descargar_ventas")
+def descargar_ventas():
+    conn = get_conn()
+    if not conn:
+        return "❌ No hay conexión"
+
+    df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
+    conn.close()
+
+    archivo = "reporte_ventas.xlsx"
+    df.to_excel(archivo, index=False)
+
+    return send_file(archivo, as_attachment=True)
+
+
+# =============================
+# 🚀 INIT DB
 # =============================
 init_db()
 

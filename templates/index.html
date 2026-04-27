@@ -102,6 +102,27 @@ button:hover {
     background: #0ea5e9;
     color: white;
     padding: 6px 10px;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 6px;
+}
+
+.btn-ventas {
+    background: #f59e0b;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    margin-left: 10px;
+}
+
+.btn-descargar {
+    background: #10b981;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    margin-left: 10px;
 }
 
 /* TABLA */
@@ -132,7 +153,7 @@ tr:nth-child(even) {
     font-weight: bold;
 }
 
-/* PAGOS */
+/* BOTONES PAGO */
 .botones-pago {
     display: flex;
     gap: 10px;
@@ -150,11 +171,17 @@ tr:nth-child(even) {
     gap: 10px;
 }
 
-/* EXTRA */
+/* TOP ACTIONS */
 .top-actions {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
+    align-items: center;
+}
+
+.acciones-superiores {
+    display: flex;
+    align-items: center;
 }
 </style>
 </head>
@@ -197,11 +224,16 @@ tr:nth-child(even) {
         </div>
     </form>
 
-    <!-- LIMPIAR FILTROS -->
+    <!-- ACCIONES SUPERIORES -->
     <div class="top-actions">
         <a href="/">
             <button class="btn-ver">Limpiar filtros</button>
         </a>
+
+        <div class="acciones-superiores">
+            <a href="/ventas" class="btn-ventas">📊 Ver ventas</a>
+            <a href="/descargar_ventas" class="btn-descargar">📥 Excel</a>
+        </div>
     </div>
 
     <!-- AGREGAR -->
