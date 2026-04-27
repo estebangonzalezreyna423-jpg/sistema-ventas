@@ -22,35 +22,41 @@ USUARIOS = {
 def get_conn():
     if not DATABASE_URL:
         return None
-    return psycopg2.connect(DATABASE_URL)
+    try:
+        return psycopg2.connect(DATABASE_URL)
+    except:
+        return None
 
 
 def init_db():
     conn = get_conn()
     if not conn:
         return
-    cur = conn.cursor()
+    try:
+        cur = conn.cursor()
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS ventas (
-            id SERIAL PRIMARY KEY,
-            usuario TEXT,
-            codigo TEXT,
-            nombre TEXT,
-            cantidad INT,
-            subtotal FLOAT,
-            metodo TEXT,
-            fecha TIMESTAMP
-        )
-    """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS ventas (
+                id SERIAL PRIMARY KEY,
+                usuario TEXT,
+                codigo TEXT,
+                nombre TEXT,
+                cantidad INT,
+                subtotal FLOAT,
+                metodo TEXT,
+                fecha TIMESTAMP
+            )
+        """)
 
-    conn.commit()
-    cur.close()
-    conn.close()
+        conn.commit()
+        cur.close()
+        conn.close()
+    except:
+        pass
 
 
 # =============================
-# UTILIDADES SEGURAS
+# UTILIDADES
 # =============================
 def cargar_excel():
     if not os.path.exists(ARCHIVO):
@@ -60,12 +66,9 @@ def cargar_excel():
         for i in range(10):
             df = pd.read_excel(ARCHIVO, header=i)
             df.columns = df.columns.str.strip().str.upper()
-
             if "CODIGO" in df.columns:
                 return df
-
         return pd.DataFrame()
-
     except:
         return pd.DataFrame()
 
@@ -73,7 +76,6 @@ def cargar_excel():
 def buscar_columna(df, palabras):
     if df is None or df.empty:
         return None
-
     for col in df.columns:
         for p in palabras:
             if p in col:
@@ -82,9 +84,7 @@ def buscar_columna(df, palabras):
 
 
 def limpiar_texto(valor):
-    if valor is None:
-        return ""
-    return str(valor).strip().upper()
+    return str(valor).strip().upper() if valor else ""
 
 
 def login_requerido():
@@ -117,7 +117,7 @@ def logout():
 
 
 # =============================
-# INDEX (ARREGLADO)
+# INDEX
 # =============================
 @app.route("/")
 def index():
@@ -132,14 +132,8 @@ def index():
     col_editorial = buscar_columna(df, ["EDITORIAL"])
     col_categoria = buscar_columna(df, ["CATEGORIA"])
 
-    editoriales = []
-    categorias = []
-
-    if col_editorial:
-        editoriales = sorted(df[col_editorial].dropna().astype(str).str.upper().unique())
-
-    if col_categoria:
-        categorias = sorted(df[col_categoria].dropna().astype(str).str.upper().unique())
+    editoriales = sorted(df[col_editorial].dropna().astype(str).str.upper().unique()) if col_editorial else []
+    categorias = sorted(df[col_categoria].dropna().astype(str).str.upper().unique()) if col_categoria else []
 
     editorial_filtro = limpiar_texto(request.args.get("editorial"))
     categoria_filtro = limpiar_texto(request.args.get("categoria"))
@@ -166,7 +160,7 @@ def index():
 
 
 # =============================
-# AGREGAR (ARREGLADO - EVITA CRASH)
+# AGREGAR
 # =============================
 @app.route("/agregar", methods=["POST"])
 def agregar():
@@ -184,7 +178,6 @@ def agregar():
     col_precio = buscar_columna(df, ["COSTO"])
     col_stock = buscar_columna(df, ["STOCK"])
 
-    # 🔥 SI NO HAY COLUMNAS, NO ROMPE
     if not all([col_codigo, col_nombre, col_precio, col_stock]):
         return redirect("/")
 
@@ -225,16 +218,14 @@ def agregar():
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
     carrito = session.get("carrito", [])
-
     if 0 <= index < len(carrito):
         carrito.pop(index)
-
     session["carrito"] = carrito
     return redirect("/")
 
 
 # =============================
-# FINALIZAR
+# FINALIZAR (ARREGLADO)
 # =============================
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
@@ -245,8 +236,6 @@ def finalizar(metodo):
     df = cargar_excel()
 
     conn = get_conn()
-    cur = conn.cursor() if conn else None
-
     ahora = datetime.now()
 
     col_codigo = buscar_columna(df, ["CODIGO"])
@@ -254,14 +243,18 @@ def finalizar(metodo):
     col_nombre = buscar_columna(df, ["NOMBRE"])
 
     for item in carrito:
-        if col_codigo and col_stock:
+        try:
             fila = df[df[col_codigo] == item["codigo"]].index
 
             if len(fila) > 0:
                 i = fila[0]
+
+                # bajar stock
                 df.at[i, col_stock] -= item["cantidad"]
 
-                if cur:
+                # guardar venta (SIEMPRE INTENTA)
+                if conn:
+                    cur = conn.cursor()
                     cur.execute("""
                         INSERT INTO ventas (usuario, codigo, nombre, cantidad, subtotal, metodo, fecha)
                         VALUES (%s,%s,%s,%s,%s,%s,%s)
@@ -274,10 +267,13 @@ def finalizar(metodo):
                         metodo.upper(),
                         ahora
                     ))
+                    conn.commit()
+                    cur.close()
+
+        except Exception as e:
+            print("ERROR FINALIZAR:", e)
 
     if conn:
-        conn.commit()
-        cur.close()
         conn.close()
 
     df.to_excel(ARCHIVO, index=False)
@@ -287,7 +283,7 @@ def finalizar(metodo):
 
 
 # =============================
-# VENTAS (SEGURO)
+# VENTAS (ESTABLE)
 # =============================
 @app.route("/ventas")
 def ver_ventas():
@@ -312,8 +308,8 @@ def ver_ventas():
             usuario=session.get("user")
         )
 
-    except:
-        return "❌ Error cargando ventas"
+    except Exception as e:
+        return f"❌ Error ventas: {str(e)}"
 
 
 # =============================
