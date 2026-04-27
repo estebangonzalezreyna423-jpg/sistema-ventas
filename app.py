@@ -207,7 +207,7 @@ def eliminar(index):
 
 
 # =============================
-# FINALIZAR (ARREGLADO BIEN)
+# FINALIZAR (MEJORADO)
 # =============================
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
@@ -215,8 +215,10 @@ def finalizar(metodo):
         return redirect("/login")
 
     carrito = session.get("carrito", [])
-    df = cargar_excel()
+    if not carrito:
+        return redirect("/")
 
+    df = cargar_excel()
     conn = get_conn()
     ahora = datetime.now()
 
@@ -224,14 +226,13 @@ def finalizar(metodo):
     col_stock = buscar_columna(df, ["STOCK"])
     col_nombre = buscar_columna(df, ["NOMBRE"])
 
-    for item in carrito:
-        try:
+    try:
+        for item in carrito:
             idx = df[df[col_codigo] == item["codigo"]].index
             if len(idx) == 0:
                 continue
 
             i = idx[0]
-
             df.at[i, col_stock] -= item["cantidad"]
 
             if conn:
@@ -248,13 +249,13 @@ def finalizar(metodo):
                     metodo.upper(),
                     ahora
                 ))
+                conn.commit()
                 cur.close()
 
-        except:
-            pass
+    except Exception as e:
+        print("ERROR FINALIZAR:", e)
 
     if conn:
-        conn.commit()
         conn.close()
 
     df.to_excel(ARCHIVO, index=False)
@@ -264,7 +265,7 @@ def finalizar(metodo):
 
 
 # =============================
-# VENTAS (ARREGLADO DEFINITIVO)
+# VENTAS
 # =============================
 @app.route("/ventas")
 def ver_ventas():
