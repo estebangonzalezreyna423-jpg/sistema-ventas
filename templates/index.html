@@ -64,40 +64,39 @@ button {
     cursor: pointer;
 }
 
-.btn-agregar { width: 100%; background: #2563eb; color: white; }
+.btn-agregar {
+    width: 100%;
+    background: #2563eb;
+    color: white;
+}
 
 .btn-eliminar {
     background: red;
     color: white;
-    padding: 6px 10px;
+    padding: 5px 8px;
     border-radius: 6px;
     text-decoration: none;
-    display: inline-block;
 }
 
-/* BOTONES PAGO (ARREGLADO) */
+/* BOTONES PAGO (PROFESIONAL) */
 .botones-pago {
     display: flex;
-    gap: 8px;
-    margin-top: 10px;
-    justify-content: flex-start;
+    gap: 10px;
+    margin-top: 12px;
 }
 
-.btn-finalizar {
-    background: #16a34a;
-    color: white;
-    padding: 6px 12px;
-    font-size: 12px;
-    border-radius: 6px;
-}
-
+.btn-finalizar,
 .btn-yape {
-    background: #6d28d9;
-    color: white;
-    padding: 6px 12px;
+    flex: 1;
+    padding: 8px;
     font-size: 12px;
     border-radius: 6px;
+    color: white;
+    text-align: center;
 }
+
+.btn-finalizar { background: #16a34a; }
+.btn-yape { background: #6d28d9; }
 
 /* LINKS */
 .btn-link {
@@ -128,11 +127,13 @@ td {
     text-align: center;
 }
 
-tr:nth-child(even) { background: #f1f5f9; }
+tr:nth-child(even) {
+    background: #f1f5f9;
+}
 
 /* TOTAL */
 .total {
-    font-size: 20px;
+    font-size: 18px;
     margin-top: 10px;
     font-weight: bold;
 }
@@ -244,13 +245,8 @@ tr:nth-child(even) { background: #f1f5f9; }
     <div class="total">Total: S/ {{ total }}</div>
 
     <div class="botones-pago">
-        <a href="/finalizar/efectivo">
-            <button class="btn-finalizar">Efectivo</button>
-        </a>
-
-        <a href="/finalizar/yape">
-            <button class="btn-yape">Yape</button>
-        </a>
+        <a href="/finalizar/efectivo" class="btn-finalizar">Efectivo</a>
+        <a href="/finalizar/yape" class="btn-yape">Yape</a>
     </div>
 </div>
 
