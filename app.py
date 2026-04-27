@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, send_file
+from flask import Flask, render_template, request, redirect, session
 import pandas as pd
 from datetime import datetime
 import os
@@ -54,28 +54,27 @@ def init_db():
 # =============================
 # UTILIDADES
 # =============================
+COLUMNAS_BASE = ["CODIGO", "NOMBRE", "PRECIO", "CATEGORIA", "EDITORIAL", "STOCK"]
+
 def cargar_excel():
     if not os.path.exists(ARCHIVO):
-        return pd.DataFrame()
-
-    try:
-        df = pd.read_excel(ARCHIVO)
-        df.columns = df.columns.astype(str).str.strip().str.upper()
+        df = pd.DataFrame(columns=COLUMNAS_BASE)
+        df.to_excel(ARCHIVO, index=False)
         return df
-    except:
-        return pd.DataFrame()
+
+    df = pd.read_excel(ARCHIVO)
+    df.columns = df.columns.astype(str).str.strip().str.upper()
+
+    # asegura estructura
+    for col in COLUMNAS_BASE:
+        if col not in df.columns:
+            df[col] = None
+
+    return df
 
 
 def guardar_excel(df):
     df.to_excel(ARCHIVO, index=False)
-
-
-def buscar_columna(df, palabras):
-    for col in df.columns:
-        for p in palabras:
-            if p in col:
-                return col
-    return None
 
 
 def limpiar(valor):
@@ -122,16 +121,11 @@ def index():
     carrito = session.get("carrito", [])
     total = sum(i["subtotal"] for i in carrito)
 
-    col_editorial = buscar_columna(df, ["EDITORIAL"])
-    col_categoria = buscar_columna(df, ["CATEGORIA"])
-
     return render_template(
         "index.html",
         tabla=df.to_html(index=False, classes="tabla"),
         carrito=carrito,
         total=total,
-        editoriales=df[col_editorial].dropna().unique() if col_editorial else [],
-        categorias=df[col_categoria].dropna().unique() if col_categoria else [],
         usuario=session.get("user")
     )
 
@@ -161,22 +155,22 @@ def inventario():
 # =============================
 @app.route("/inventario/agregar", methods=["POST"])
 def agregar_libro():
-    if login_requerido():
-        return redirect("/login")
-
-    if session.get("user") != "PC1":
+    if login_requerido() or session.get("user") != "PC1":
         return redirect("/inventario")
 
     df = cargar_excel()
 
-    nuevo = {
-        "CODIGO": limpiar(request.form.get("codigo")),
-        "NOMBRE": request.form.get("nombre"),
-        "PRECIO": float(request.form.get("precio")),
-        "CATEGORIA": request.form.get("categoria"),
-        "EDITORIAL": request.form.get("editorial"),
-        "STOCK": int(request.form.get("stock"))
-    }
+    try:
+        nuevo = {
+            "CODIGO": limpiar(request.form.get("codigo")),
+            "NOMBRE": request.form.get("nombre"),
+            "PRECIO": float(request.form.get("precio")),
+            "CATEGORIA": request.form.get("categoria"),
+            "EDITORIAL": request.form.get("editorial"),
+            "STOCK": int(request.form.get("stock"))
+        }
+    except:
+        return redirect("/inventario")
 
     df = pd.concat([df, pd.DataFrame([nuevo])], ignore_index=True)
     guardar_excel(df)
@@ -189,27 +183,22 @@ def agregar_libro():
 # =============================
 @app.route("/inventario/editar", methods=["POST"])
 def editar_inventario():
-    if session.get("user") != "PC1":
+    if login_requerido() or session.get("user") != "PC1":
         return redirect("/inventario")
 
     df = cargar_excel()
-
     codigo = limpiar(request.form.get("codigo"))
 
-    col_codigo = buscar_columna(df, ["CODIGO"])
-    col_stock = buscar_columna(df, ["STOCK"])
-    col_precio = buscar_columna(df, ["PRECIO", "COSTO"])
-
-    idx = df[df[col_codigo].astype(str).str.upper() == codigo].index
+    idx = df[df["CODIGO"].astype(str).str.upper() == codigo].index
 
     if len(idx) > 0:
         i = idx[0]
 
         if request.form.get("stock"):
-            df.at[i, col_stock] = int(request.form.get("stock"))
+            df.at[i, "STOCK"] = int(request.form.get("stock"))
 
         if request.form.get("precio"):
-            df.at[i, col_precio] = float(request.form.get("precio"))
+            df.at[i, "PRECIO"] = float(request.form.get("precio"))
 
         guardar_excel(df)
 
@@ -217,7 +206,7 @@ def editar_inventario():
 
 
 # =============================
-# AGREGAR AL CARRITO
+# CARRITO
 # =============================
 @app.route("/agregar", methods=["POST"])
 def agregar():
@@ -230,27 +219,22 @@ def agregar():
     codigo = limpiar(request.form.get("codigo"))
     cantidad = int(request.form.get("cantidad"))
 
-    col_codigo = buscar_columna(df, ["CODIGO"])
-    col_nombre = buscar_columna(df, ["NOMBRE"])
-    col_precio = buscar_columna(df, ["PRECIO", "COSTO"])
-    col_stock = buscar_columna(df, ["STOCK"])
-
-    fila = df[df[col_codigo].astype(str).str.upper() == codigo]
+    fila = df[df["CODIGO"].astype(str).str.upper() == codigo]
 
     if fila.empty:
         return redirect("/")
 
     item = fila.iloc[0]
 
-    if item[col_stock] < cantidad:
+    if item["STOCK"] < cantidad:
         return redirect("/")
 
     carrito.append({
-        "codigo": item[col_codigo],
-        "nombre": item[col_nombre],
-        "precio": float(item[col_precio]),
+        "codigo": item["CODIGO"],
+        "nombre": item["NOMBRE"],
+        "precio": float(item["PRECIO"]),
         "cantidad": cantidad,
-        "subtotal": float(item[col_precio]) * cantidad
+        "subtotal": float(item["PRECIO"]) * cantidad
     })
 
     session["carrito"] = carrito
@@ -258,7 +242,7 @@ def agregar():
 
 
 # =============================
-# ELIMINAR CARRITO
+# ELIMINAR
 # =============================
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
@@ -272,7 +256,7 @@ def eliminar(index):
 
 
 # =============================
-# FINALIZAR VENTA
+# FINALIZAR
 # =============================
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
@@ -284,15 +268,12 @@ def finalizar(metodo):
     conn = get_conn()
     now = datetime.now()
 
-    col_codigo = buscar_columna(df, ["CODIGO"])
-    col_stock = buscar_columna(df, ["STOCK"])
-
     for i in carrito:
-        idx = df[df[col_codigo] == i["codigo"]].index
+        idx = df[df["CODIGO"] == i["codigo"]].index
 
         if len(idx) > 0:
             pos = idx[0]
-            df.at[pos, col_stock] -= i["cantidad"]
+            df.at[pos, "STOCK"] -= i["cantidad"]
 
         if conn:
             cur = conn.cursor()
@@ -326,20 +307,15 @@ def finalizar(metodo):
 @app.route("/ventas")
 def ventas():
     conn = get_conn()
-
     df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
     conn.close()
-
-    total = df["subtotal"].sum() if not df.empty else 0
-    efectivo = df[df["metodo"] == "EFECTIVO"]["subtotal"].sum() if not df.empty else 0
-    yape = df[df["metodo"] == "YAPE"]["subtotal"].sum() if not df.empty else 0
 
     return render_template(
         "ventas.html",
         tabla=df.to_html(index=False, classes="tabla"),
-        total=total,
-        total_efectivo=efectivo,
-        total_yape=yape,
+        total=df["subtotal"].sum() if not df.empty else 0,
+        total_efectivo=df[df["metodo"] == "EFECTIVO"]["subtotal"].sum() if not df.empty else 0,
+        total_yape=df[df["metodo"] == "YAPE"]["subtotal"].sum() if not df.empty else 0,
         usuario=session.get("user")
     )
 

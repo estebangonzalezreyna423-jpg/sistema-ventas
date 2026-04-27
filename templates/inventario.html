@@ -26,8 +26,45 @@ header {
     background: white;
     padding: 20px;
     border-radius: 10px;
+    margin-bottom: 20px;
 }
 
+/* BOTONES */
+.btn {
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.btn-agregar {
+    background: #2563eb;
+    color: white;
+}
+
+.btn-editar {
+    background: #16a34a;
+    color: white;
+}
+
+.btn-disabled {
+    background: gray;
+    color: white;
+    cursor: not-allowed;
+}
+
+/* INPUTS */
+input {
+    padding: 8px;
+    width: 100%;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+/* TABLA */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -45,18 +82,10 @@ td {
     padding: 8px;
 }
 
-input {
-    padding: 6px;
-    width: 100%;
-}
-
-button {
-    background: #16a34a;
-    color: white;
-    padding: 8px;
-    border: none;
-    cursor: pointer;
-    width: 100%;
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
 }
 </style>
 
@@ -75,28 +104,64 @@ button {
 
 <div class="container">
 
+<!-- ===================== -->
+<!-- AGREGAR LIBRO -->
+<!-- ===================== -->
 <div class="card">
+    <h2>📚 Agregar Libro</h2>
 
-<h2>Editar Inventario (solo PC1)</h2>
+    {% if usuario == "PC1" %}
 
-{% if usuario == "PC1" %}
-<form method="POST" action="/inventario/actualizar">
+    <form method="POST" action="/inventario/agregar">
 
-    <input type="text" name="codigo" placeholder="Código del producto" required>
-    <input type="number" name="stock" placeholder="Nuevo stock">
-    <input type="number" name="precio" placeholder="Nuevo precio">
+        <div class="form-grid">
+            <input type="text" name="codigo" placeholder="Código" required>
+            <input type="text" name="nombre" placeholder="Nombre del libro" required>
 
-    <button type="submit">Actualizar</button>
-</form>
-{% else %}
-<p>🔒 Solo PC1 puede editar el inventario</p>
-{% endif %}
+            <input type="number" name="precio" placeholder="Precio" required>
+            <input type="number" name="stock" placeholder="Stock inicial" required>
 
-<hr>
+            <input type="text" name="categoria" placeholder="Categoría">
+            <input type="text" name="editorial" placeholder="Editorial">
+        </div>
 
-<h3>Lista de productos</h3>
+        <button class="btn btn-agregar">Agregar Libro</button>
+    </form>
 
-{{ tabla|safe }}
+    {% else %}
+        <p>🔒 Solo PC1 puede agregar libros</p>
+    {% endif %}
+</div>
+
+<!-- ===================== -->
+<!-- EDITAR STOCK / PRECIO -->
+<!-- ===================== -->
+<div class="card">
+    <h2>✏️ Editar Stock / Precio</h2>
+
+    {% if usuario == "PC1" %}
+
+    <form method="POST" action="/inventario/actualizar">
+
+        <input type="text" name="codigo" placeholder="Código del libro" required>
+        <input type="number" name="stock" placeholder="Nuevo stock">
+        <input type="number" name="precio" placeholder="Nuevo precio">
+
+        <button class="btn btn-editar">Actualizar</button>
+    </form>
+
+    {% else %}
+        <p>🔒 Solo PC1 puede editar inventario</p>
+    {% endif %}
+</div>
+
+<!-- ===================== -->
+<!-- LISTA PRODUCTOS -->
+<!-- ===================== -->
+<div class="card">
+    <h2>📦 Lista de productos</h2>
+
+    {{ tabla|safe }}
 
 </div>
 
