@@ -75,17 +75,28 @@ button {
     display: inline-block;
 }
 
-/* BOTONES PAGO */
+/* BOTONES PAGO (ARREGLADO) */
+.botones-pago {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    justify-content: flex-start;
+}
+
 .btn-finalizar {
     background: #16a34a;
     color: white;
-    width: 100%;
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 6px;
 }
 
 .btn-yape {
     background: #6d28d9;
     color: white;
-    width: 100%;
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 6px;
 }
 
 /* LINKS */
@@ -193,7 +204,6 @@ tr:nth-child(even) { background: #f1f5f9; }
 
     <div class="top-actions">
         <a href="/" class="btn-link btn-inventario">Limpiar filtros</a>
-        <a href="/ventas" class="btn-link btn-ventas">Ver ventas</a>
     </div>
 
     <form action="/agregar" method="post">
@@ -225,8 +235,8 @@ tr:nth-child(even) { background: #f1f5f9; }
             <td>{{ item.cantidad }}</td>
             <td>S/ {{ item.subtotal }}</td>
             <td>
-    <a href="/eliminar/{{ loop.index0 }}" class="btn-eliminar">X</a>
-</td>
+                <a href="/eliminar/{{ loop.index0 }}" class="btn-eliminar">X</a>
+            </td>
         </tr>
         {% endfor %}
     </table>
