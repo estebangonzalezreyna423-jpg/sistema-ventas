@@ -32,24 +32,25 @@ def init_db():
     conn = get_conn()
     if not conn:
         return
-    cur = conn.cursor()
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS ventas (
-            id SERIAL PRIMARY KEY,
-            usuario TEXT,
-            codigo TEXT,
-            nombre TEXT,
-            cantidad INT,
-            subtotal FLOAT,
-            metodo TEXT,
-            fecha TIMESTAMP
-        )
-    """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS ventas (
+                id SERIAL PRIMARY KEY,
+                usuario TEXT,
+                codigo TEXT,
+                nombre TEXT,
+                cantidad INT,
+                subtotal FLOAT,
+                metodo TEXT,
+                fecha TIMESTAMP
+            )
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+    except:
+        pass
 
 
 # =============================
@@ -225,6 +226,9 @@ def agregar():
     col_precio = buscar_columna(df, ["COSTO"])
     col_stock = buscar_columna(df, ["STOCK"])
 
+    if not all([col_codigo, col_nombre, col_precio, col_stock]):
+        return redirect("/")
+
     fila = df[
         (df[col_codigo].astype(str).str.upper() == codigo) |
         (df[col_nombre].astype(str).str.upper().str.contains(codigo, na=False))
@@ -253,6 +257,20 @@ def agregar():
     })
 
     session["carrito"] = carrito
+    return redirect("/")
+
+
+# =============================
+# ELIMINAR (ARREGLADO DEFINITIVO)
+# =============================
+@app.route("/eliminar/<int:index>")
+def eliminar(index):
+    carrito = session.get("carrito", [])
+
+    if 0 <= index < len(carrito):
+        carrito.pop(index)
+        session["carrito"] = carrito
+
     return redirect("/")
 
 
@@ -315,7 +333,7 @@ def finalizar(metodo):
 
 
 # =============================
-# VENTAS (CON TOTALES SEPARADOS)
+# VENTAS
 # =============================
 @app.route("/ventas")
 def ver_ventas():
@@ -330,8 +348,6 @@ def ver_ventas():
     conn.close()
 
     total = float(df["subtotal"].sum()) if not df.empty else 0
-
-    # 🔥 NUEVO: separar por método
     total_efectivo = float(df[df["metodo"] == "EFECTIVO"]["subtotal"].sum()) if not df.empty else 0
     total_yape = float(df[df["metodo"] == "YAPE"]["subtotal"].sum()) if not df.empty else 0
 
