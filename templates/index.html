@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Sistema de Ventas</title>
+    <title>Ventas</title>
 
 <style>
 body {
-    font-family: Arial, sans-serif;
+    font-family: Arial;
     margin: 0;
     background: #eef2f7;
 }
@@ -24,28 +24,11 @@ header h1 {
     margin: 0;
 }
 
-.usuario {
-    font-size: 14px;
-}
-
-.usuario a {
-    color: white;
-    margin-left: 10px;
-    text-decoration: none;
-}
-
-/* LAYOUT */
 .container {
     padding: 20px;
 }
 
-.grid {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 20px;
-}
-
-/* CARDS */
+/* CARD */
 .card {
     background: white;
     padding: 20px;
@@ -53,82 +36,29 @@ header h1 {
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-/* INPUTS */
-input, select {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-}
-
 /* BOTONES */
-button {
-    padding: 10px;
-    border: none;
+.btn {
+    padding: 10px 12px;
     border-radius: 6px;
-    cursor: pointer;
-}
-
-button:hover {
-    opacity: 0.9;
-}
-
-.btn-agregar {
-    width: 100%;
-    background: #2563eb;
-    color: white;
-}
-
-.btn-eliminar {
-    background: red;
-    color: white;
-    padding: 5px 8px;
-}
-
-.btn-finalizar {
-    background: #16a34a;
-    color: white;
-    width: 100%;
-}
-
-.btn-yape {
-    background: #6d28d9;
-    color: white;
-    width: 100%;
-}
-
-.btn-ver {
-    background: #0ea5e9;
-    color: white;
-    padding: 6px 10px;
     text-decoration: none;
+    color: white;
+    margin-left: 10px;
     display: inline-block;
-    border-radius: 6px;
 }
 
-.btn-ventas {
-    background: #f59e0b;
-    color: white;
-    padding: 8px 12px;
-    border-radius: 6px;
-    text-decoration: none;
-    margin-left: 10px;
+.btn-back {
+    background: #2563eb;
 }
 
-.btn-descargar {
-    background: #10b981;
-    color: white;
-    padding: 8px 12px;
-    border-radius: 6px;
-    text-decoration: none;
-    margin-left: 10px;
+.btn-download {
+    background: #16a34a;
 }
 
 /* TABLA */
 table {
     width: 100%;
     border-collapse: collapse;
+    margin-top: 15px;
 }
 
 th {
@@ -148,154 +78,48 @@ tr:nth-child(even) {
 
 /* TOTAL */
 .total {
-    font-size: 20px;
-    margin-top: 10px;
+    margin-top: 15px;
+    font-size: 22px;
     font-weight: bold;
+    color: #111;
 }
 
-/* BOTONES PAGO */
-.botones-pago {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-/* INVENTARIO */
-.inventario {
-    margin-top: 20px;
-}
-
-/* FILTROS */
-.filtros {
-    display: flex;
-    gap: 10px;
-}
-
-/* TOP ACTIONS */
-.top-actions {
+/* TOP BAR */
+.topbar {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 10px;
-    align-items: center;
-}
-
-.acciones-superiores {
-    display: flex;
     align-items: center;
 }
 </style>
+
 </head>
 
 <body>
 
 <header>
-    <h1>SISTEMA DE VENTAS</h1>
-    <div class="usuario">
-        Usuario: {{ usuario }}
-        <a href="/ventas">📊 Ventas</a>
-        <a href="/logout">Cerrar sesión</a>
+    <h1>📊 VENTAS</h1>
+
+    <div>
+        <a href="/" class="btn btn-back">⬅ Regresar</a>
+        <a href="/descargar_ventas" class="btn btn-download">📥 Descargar Excel</a>
     </div>
 </header>
 
 <div class="container">
 
-<div class="grid">
+    <div class="card">
 
-<!-- IZQUIERDA -->
-<div class="card">
-    <h2>Agregar Producto</h2>
-
-    <!-- FILTROS -->
-    <form method="get">
-        <div class="filtros">
-            <select name="editorial" onchange="this.form.submit()">
-                <option value="">Editorial</option>
-                {% for e in editoriales %}
-                    <option value="{{ e }}" {% if e == editorial_actual %}selected{% endif %}>{{ e }}</option>
-                {% endfor %}
-            </select>
-
-            <select name="categoria" onchange="this.form.submit()">
-                <option value="">Categoría</option>
-                {% for c in categorias %}
-                    <option value="{{ c }}" {% if c == categoria_actual %}selected{% endif %}>{{ c }}</option>
-                {% endfor %}
-            </select>
+        <div class="topbar">
+            <h2>Registro de ventas</h2>
         </div>
-    </form>
 
-    <!-- ACCIONES SUPERIORES -->
-    <div class="top-actions">
-        <a href="/">
-            <button class="btn-ver">Limpiar filtros</button>
-        </a>
+        {{ tabla | safe }}
 
-        <div class="acciones-superiores">
-            <a href="/ventas" class="btn-ventas">📊 Ver ventas</a>
-            <a href="/descargar_ventas" class="btn-descargar">📥 Excel</a>
+        <div class="total">
+            💰 Total vendido: S/ {{ total }}
         </div>
+
     </div>
-
-    <!-- AGREGAR -->
-    <form action="/agregar" method="post">
-        <input type="text" name="codigo" placeholder="Código o nombre del producto" required>
-        <input type="number" name="cantidad" placeholder="Cantidad" min="1" required>
-        <button type="submit" class="btn-agregar">Agregar al carrito</button>
-    </form>
-</div>
-
-<!-- DERECHA -->
-<div class="card">
-    <h2>Carrito</h2>
-
-    <table>
-        <tr>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Precio</th>
-            <th>Cantidad</th>
-            <th>Subtotal</th>
-            <th></th>
-        </tr>
-
-        {% for item in carrito %}
-        <tr>
-            <td>{{ item.codigo }}</td>
-            <td>{{ item.nombre }}</td>
-            <td>S/ {{ item.precio }}</td>
-            <td>{{ item.cantidad }}</td>
-            <td>S/ {{ item.subtotal }}</td>
-            <td>
-                <a href="/eliminar/{{ loop.index0 }}">
-                    <button class="btn-eliminar">X</button>
-                </a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-
-    <div class="total">
-        Total: S/ {{ total }}
-    </div>
-
-    <div class="botones-pago">
-        <a href="/finalizar/efectivo">
-            <button class="btn-finalizar">Efectivo</button>
-        </a>
-
-        <a href="/finalizar/yape">
-            <button class="btn-yape">Yape</button>
-        </a>
-    </div>
-</div>
-
-</div>
-
-<!-- INVENTARIO -->
-<div class="card inventario">
-    <h2>Inventario</h2>
-    {{ tabla|safe }}
-</div>
 
 </div>
 

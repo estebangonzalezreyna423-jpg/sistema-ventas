@@ -284,21 +284,26 @@ def ver_ventas():
     if login_requerido():
         return redirect("/login")
 
-    conn = get_conn()
-    if not conn:
-        return "❌ No hay conexión a base de datos"
+    try:
+        conn = get_conn()
 
-    df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
-    conn.close()
+        if not conn:
+            return "❌ No hay conexión a la base de datos"
 
-    total = df["subtotal"].sum() if not df.empty else 0
+        df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
+        conn.close()
 
-    return render_template(
-        "ventas.html",
-        tabla=df.to_html(index=False, classes="tabla"),
-        total=total,
-        usuario=session.get("user")
-    )
+        total = df["subtotal"].sum() if not df.empty else 0
+
+        return render_template(
+            "ventas.html",
+            tabla=df.to_html(index=False, classes="tabla"),
+            total=total,
+            usuario=session.get("user")
+        )
+
+    except Exception as e:
+        return f"❌ Error en ventas: {str(e)}"
 
 
 # =============================
