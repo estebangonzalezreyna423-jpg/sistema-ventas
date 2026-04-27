@@ -331,12 +331,9 @@ def ver_ventas():
 
     total = float(df["subtotal"].sum()) if not df.empty else 0
 
-    total_efectivo = 0
-    total_yape = 0
-
-    if not df.empty and "metodo" in df.columns:
-        total_efectivo = float(df[df["metodo"] == "EFECTIVO"]["subtotal"].sum())
-        total_yape = float(df[df["metodo"] == "YAPE"]["subtotal"].sum())
+    # 🔥 NUEVO: separar por método
+    total_efectivo = float(df[df["metodo"] == "EFECTIVO"]["subtotal"].sum()) if not df.empty else 0
+    total_yape = float(df[df["metodo"] == "YAPE"]["subtotal"].sum()) if not df.empty else 0
 
     return render_template(
         "ventas.html",

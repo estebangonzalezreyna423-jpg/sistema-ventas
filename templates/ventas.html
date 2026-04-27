@@ -79,9 +79,16 @@ tr:nth-child(even) {
 /* TOTAL */
 .total {
     margin-top: 15px;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: bold;
     color: #111;
+}
+
+.resumen {
+    margin-top: 15px;
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 8px;
 }
 </style>
 
@@ -94,7 +101,7 @@ tr:nth-child(even) {
 
     <div>
         <a href="/" class="btn btn-back">⬅ Volver</a>
-        <a href="/descargar_ventas" class="btn btn-download"> Excel</a>
+        <a href="/descargar_ventas" class="btn btn-download">Excel</a>
     </div>
 </header>
 
@@ -106,8 +113,21 @@ tr:nth-child(even) {
 
         {{ tabla | safe }}
 
-        <div class="total">
-             Total vendido: S/ {{ total }}
+        <!-- 🔥 RESUMEN NUEVO -->
+        <div class="resumen">
+
+            <div class="total">
+                 Total vendido: S/ {{ total }}
+            </div>
+
+            <div class="total">
+                 Total en efectivo: S/ {{ total_efectivo }}
+            </div>
+
+            <div class="total">
+                 Total en Yape: S/ {{ total_yape }}
+            </div>
+
         </div>
 
     </div>
