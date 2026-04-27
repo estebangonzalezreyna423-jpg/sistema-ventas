@@ -28,6 +28,12 @@ header h1 {
     font-size: 14px;
 }
 
+.usuario a {
+    color: white;
+    margin-left: 10px;
+    text-decoration: none;
+}
+
 /* LAYOUT */
 .container {
     padding: 20px;
@@ -64,6 +70,10 @@ button {
     cursor: pointer;
 }
 
+button:hover {
+    opacity: 0.9;
+}
+
 .btn-agregar {
     width: 100%;
     background: #2563eb;
@@ -86,6 +96,12 @@ button {
     background: #6d28d9;
     color: white;
     width: 100%;
+}
+
+.btn-ver {
+    background: #0ea5e9;
+    color: white;
+    padding: 6px 10px;
 }
 
 /* TABLA */
@@ -133,6 +149,13 @@ tr:nth-child(even) {
     display: flex;
     gap: 10px;
 }
+
+/* EXTRA */
+.top-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
 </style>
 </head>
 
@@ -141,8 +164,9 @@ tr:nth-child(even) {
 <header>
     <h1>SISTEMA DE VENTAS</h1>
     <div class="usuario">
-        Usuario: {{ usuario }} |
-        <a href="/logout" style="color:white;">Cerrar sesión</a>
+        Usuario: {{ usuario }}
+        <a href="/ventas">📊 Ventas</a>
+        <a href="/logout">Cerrar sesión</a>
     </div>
 </header>
 
@@ -173,10 +197,17 @@ tr:nth-child(even) {
         </div>
     </form>
 
+    <!-- LIMPIAR FILTROS -->
+    <div class="top-actions">
+        <a href="/">
+            <button class="btn-ver">Limpiar filtros</button>
+        </a>
+    </div>
+
     <!-- AGREGAR -->
     <form action="/agregar" method="post">
         <input type="text" name="codigo" placeholder="Código o nombre del producto" required>
-        <input type="number" name="cantidad" placeholder="Cantidad" required>
+        <input type="number" name="cantidad" placeholder="Cantidad" min="1" required>
         <button type="submit" class="btn-agregar">Agregar al carrito</button>
     </form>
 </div>
@@ -203,9 +234,9 @@ tr:nth-child(even) {
             <td>{{ item.cantidad }}</td>
             <td>S/ {{ item.subtotal }}</td>
             <td>
-                <form action="/eliminar/{{ loop.index0 }}" method="get">
+                <a href="/eliminar/{{ loop.index0 }}">
                     <button class="btn-eliminar">X</button>
-                </form>
+                </a>
             </td>
         </tr>
         {% endfor %}
@@ -216,13 +247,13 @@ tr:nth-child(even) {
     </div>
 
     <div class="botones-pago">
-        <form action="/finalizar/efectivo" method="get">
+        <a href="/finalizar/efectivo">
             <button class="btn-finalizar">Efectivo</button>
-        </form>
+        </a>
 
-        <form action="/finalizar/yape" method="get">
+        <a href="/finalizar/yape">
             <button class="btn-yape">Yape</button>
-        </form>
+        </a>
     </div>
 </div>
 

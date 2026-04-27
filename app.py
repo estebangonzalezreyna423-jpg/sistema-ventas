@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "clave_super_segura_123")
 ARCHIVO = "inventario.xlsx"
 ARCHIVO_VENTAS = "ventas.xlsx"
 
-# 🗄️ BASE DE DATOS
+# 🗄️ DB
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 # 👤 USUARIOS
@@ -22,25 +22,51 @@ USUARIOS = {
 }
 
 # =============================
+# 🔧 CONEXIÓN DB (MEJORADA)
+# =============================
+def get_conn():
+    if not DATABASE_URL:
+        return None
+    return psycopg2.connect(DATABASE_URL)
+
+def init_db():
+    conn = get_conn()
+    if not conn:
+        return
+    cur = conn.cursor()
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS ventas (
+            id SERIAL PRIMARY KEY,
+            usuario TEXT,
+            codigo TEXT,
+            nombre TEXT,
+            cantidad INT,
+            subtotal FLOAT,
+            metodo TEXT,
+            fecha TIMESTAMP
+        )
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+# =============================
 # 🔧 FUNCIONES
 # =============================
-
 def cargar_excel():
     if not os.path.exists(ARCHIVO):
-        print("❌ No existe inventario.xlsx")
         return pd.DataFrame()
 
     try:
         for i in range(10):
             df = pd.read_excel(ARCHIVO, header=i)
             df.columns = df.columns.str.strip().str.upper()
-
             if "CODIGO" in df.columns:
                 return df
-
         return pd.DataFrame()
-    except Exception as e:
-        print("Error leyendo Excel:", e)
+    except:
         return pd.DataFrame()
 
 
@@ -61,56 +87,8 @@ def login_requerido():
 
 
 # =============================
-# 🗄️ BASE DE DATOS
-# =============================
-
-def guardar_venta_db(venta):
-    if not DATABASE_URL:
-        print("⚠️ No hay DATABASE_URL")
-        return
-
-    try:
-        conn = psycopg2.connect(DATABASE_URL)
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS ventas (
-                id SERIAL PRIMARY KEY,
-                usuario TEXT,
-                codigo TEXT,
-                nombre TEXT,
-                cantidad INT,
-                subtotal FLOAT,
-                metodo TEXT,
-                fecha TIMESTAMP
-            )
-        """)
-
-        cursor.execute("""
-            INSERT INTO ventas (usuario, codigo, nombre, cantidad, subtotal, metodo, fecha)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (
-            venta["USUARIO"],
-            venta["CODIGO"],
-            venta["NOMBRE"],
-            venta["CANTIDAD"],
-            venta["SUBTOTAL"],
-            venta["METODO"],
-            venta["FECHA"]
-        ))
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-    except Exception as e:
-        print("❌ Error DB:", e)
-
-
-# =============================
 # 🔐 LOGIN
 # =============================
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -122,7 +100,7 @@ def login():
             session["carrito"] = []
             return redirect("/")
         else:
-            return render_template("login.html", error="Usuario o contraseña incorrectos")
+            return render_template("login.html", error="Credenciales incorrectas")
 
     return render_template("login.html")
 
@@ -136,7 +114,6 @@ def logout():
 # =============================
 # 🏠 INDEX
 # =============================
-
 @app.route("/")
 def index():
     if login_requerido():
@@ -144,7 +121,7 @@ def index():
 
     df = cargar_excel()
     if df.empty:
-        return "❌ No hay inventario cargado"
+        return "❌ No hay inventario"
 
     carrito = session.get("carrito", [])
     total = sum(item["subtotal"] for item in carrito)
@@ -182,33 +159,21 @@ def index():
 # =============================
 # ➕ AGREGAR
 # =============================
-
 @app.route("/agregar", methods=["POST"])
 def agregar():
     if login_requerido():
         return redirect("/login")
 
     df = cargar_excel()
-    if df.empty:
-        return redirect("/")
-
     carrito = session.get("carrito", [])
 
     codigo = limpiar_texto(request.form.get("codigo"))
-    cantidad = request.form.get("cantidad")
-
-    try:
-        cantidad = int(cantidad)
-    except:
-        return redirect("/")
+    cantidad = int(request.form.get("cantidad"))
 
     col_codigo = buscar_columna(df, ["CODIGO"])
     col_nombre = buscar_columna(df, ["NOMBRE"])
     col_precio = buscar_columna(df, ["COSTO"])
     col_stock = buscar_columna(df, ["STOCK"])
-
-    if not all([col_codigo, col_nombre, col_precio, col_stock]):
-        return redirect("/")
 
     fila = df[
         (df[col_codigo].astype(str).str.upper() == codigo) |
@@ -220,11 +185,8 @@ def agregar():
 
     producto = fila.iloc[0]
 
-    try:
-        precio = float(str(producto[col_precio]).replace("S/", "").strip())
-        stock = float(producto[col_stock])
-    except:
-        return redirect("/")
+    precio = float(str(producto[col_precio]).replace("S/", "").strip())
+    stock = float(producto[col_stock])
 
     if stock < cantidad:
         return redirect("/")
@@ -244,12 +206,8 @@ def agregar():
 # =============================
 # ❌ ELIMINAR
 # =============================
-
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
-    if login_requerido():
-        return redirect("/login")
-
     carrito = session.get("carrito", [])
 
     if 0 <= index < len(carrito):
@@ -260,29 +218,25 @@ def eliminar(index):
 
 
 # =============================
-# 💰 FINALIZAR VENTA
+# 💰 FINALIZAR
 # =============================
-
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
     if login_requerido():
         return redirect("/login")
 
     carrito = session.get("carrito", [])
-    if not carrito:
-        return redirect("/")
-
     df = cargar_excel()
-    if df.empty:
-        return redirect("/")
+
+    conn = get_conn()
+    cur = conn.cursor() if conn else None
+
+    ahora = datetime.now()
 
     col_codigo = buscar_columna(df, ["CODIGO"])
     col_stock = buscar_columna(df, ["STOCK"])
     col_nombre = buscar_columna(df, ["NOMBRE"])
     col_ventas = buscar_columna(df, ["VENTA"])
-
-    ahora = datetime.now()
-    ventas = []
 
     for item in carrito:
         fila = df[df[col_codigo] == item["codigo"]].index
@@ -290,49 +244,56 @@ def finalizar(metodo):
         if len(fila) > 0:
             i = fila[0]
 
-            # 🔻 STOCK
             df.at[i, col_stock] -= item["cantidad"]
 
-            # 🔥 SUMAR VENTAS
             if col_ventas:
                 actual = df.at[i, col_ventas]
                 df.at[i, col_ventas] = (actual if pd.notna(actual) else 0) + item["cantidad"]
 
-            venta = {
-                "USUARIO": session["user"],
-                "CODIGO": item["codigo"],
-                "NOMBRE": df.at[i, col_nombre] if col_nombre else "",
-                "CANTIDAD": item["cantidad"],
-                "SUBTOTAL": item["subtotal"],
-                "METODO": metodo.upper(),
-                "FECHA": ahora
-            }
+            if cur:
+                cur.execute("""
+                    INSERT INTO ventas (usuario, codigo, nombre, cantidad, subtotal, metodo, fecha)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s)
+                """, (
+                    session["user"],
+                    item["codigo"],
+                    df.at[i, col_nombre],
+                    item["cantidad"],
+                    item["subtotal"],
+                    metodo.upper(),
+                    ahora
+                ))
 
-            ventas.append(venta)
+    if conn:
+        conn.commit()
+        cur.close()
+        conn.close()
 
-            # 🔥 GUARDAR EN DB
-            guardar_venta_db(venta)
-
-    # 💾 INVENTARIO
     df.to_excel(ARCHIVO, index=False)
-
-    # 💾 EXCEL VENTAS
-    df_ventas = pd.DataFrame(ventas)
-
-    if os.path.exists(ARCHIVO_VENTAS):
-        df_existente = pd.read_excel(ARCHIVO_VENTAS)
-        df_ventas = pd.concat([df_existente, df_ventas], ignore_index=True)
-
-    df_ventas.to_excel(ARCHIVO_VENTAS, index=False)
-
     session["carrito"] = []
 
     return redirect("/")
 
 
 # =============================
-# 🚀 RUN
+# 📊 VER VENTAS (🔥 CLAVE)
 # =============================
+@app.route("/ventas")
+def ver_ventas():
+    conn = get_conn()
+    if not conn:
+        return "❌ No hay DB"
+
+    df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
+    conn.close()
+
+    return df.to_html(index=False)
+
+
+# =============================
+# 🚀 INIT
+# =============================
+init_db()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
