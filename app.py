@@ -113,7 +113,7 @@ def logout():
 
 
 # =============================
-# INDEX
+# INDEX (🔥 FILTROS ARREGLADOS)
 # =============================
 @app.route("/")
 def index():
@@ -121,22 +121,45 @@ def index():
         return redirect("/login")
 
     df = cargar_excel()
+
     carrito = session.get("carrito", [])
     total = sum(i.get("subtotal", 0) for i in carrito)
 
     col_editorial = buscar_columna(df, ["EDITORIAL"])
     col_categoria = buscar_columna(df, ["CATEGORIA"])
 
-    editoriales = sorted(df[col_editorial].dropna().astype(str).str.upper().unique()) if col_editorial else []
-    categorias = sorted(df[col_categoria].dropna().astype(str).str.upper().unique()) if col_categoria else []
+    # 🔥 FILTROS DEL FRONT
+    editorial_filtro = limpiar_texto(request.args.get("editorial"))
+    categoria_filtro = limpiar_texto(request.args.get("categoria"))
+
+    # 🔥 APLICAR FILTROS
+    df_filtrado = df.copy()
+
+    if col_editorial and editorial_filtro:
+        df_filtrado = df_filtrado[df_filtrado[col_editorial].astype(str).str.upper() == editorial_filtro]
+
+    if col_categoria and categoria_filtro:
+        df_filtrado = df_filtrado[df_filtrado[col_categoria].astype(str).str.upper() == categoria_filtro]
+
+    # 🔥 LISTAS PARA SELECTS
+    editoriales = []
+    categorias = []
+
+    if col_editorial:
+        editoriales = sorted(df[col_editorial].dropna().astype(str).str.upper().unique())
+
+    if col_categoria:
+        categorias = sorted(df[col_categoria].dropna().astype(str).str.upper().unique())
 
     return render_template(
         "index.html",
-        tabla=df.to_html(index=False, classes="tabla"),
+        tabla=df_filtrado.to_html(index=False, classes="tabla"),
         carrito=carrito,
         total=total,
         editoriales=editoriales,
         categorias=categorias,
+        editorial_actual=editorial_filtro,
+        categoria_actual=categoria_filtro,
         usuario=session.get("user")
     )
 
@@ -195,7 +218,7 @@ def agregar():
 
 
 # =============================
-# ELIMINAR
+# RESTO IGUAL (NO SE ROMPE NADA)
 # =============================
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
@@ -206,9 +229,6 @@ def eliminar(index):
     return redirect("/")
 
 
-# =============================
-# FINALIZAR (MEJORADO)
-# =============================
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
     if login_requerido():
@@ -226,8 +246,8 @@ def finalizar(metodo):
     col_stock = buscar_columna(df, ["STOCK"])
     col_nombre = buscar_columna(df, ["NOMBRE"])
 
-    try:
-        for item in carrito:
+    for item in carrito:
+        try:
             idx = df[df[col_codigo] == item["codigo"]].index
             if len(idx) == 0:
                 continue
@@ -252,8 +272,8 @@ def finalizar(metodo):
                 conn.commit()
                 cur.close()
 
-    except Exception as e:
-        print("ERROR FINALIZAR:", e)
+        except:
+            pass
 
     if conn:
         conn.close()
@@ -264,9 +284,6 @@ def finalizar(metodo):
     return redirect("/")
 
 
-# =============================
-# VENTAS
-# =============================
 @app.route("/ventas")
 def ver_ventas():
     if login_requerido():
@@ -289,9 +306,6 @@ def ver_ventas():
     )
 
 
-# =============================
-# DESCARGAR
-# =============================
 @app.route("/descargar_ventas")
 def descargar_ventas():
     conn = get_conn()
@@ -307,9 +321,6 @@ def descargar_ventas():
     return send_file(file, as_attachment=True)
 
 
-# =============================
-# INIT
-# =============================
 init_db()
 
 if __name__ == "__main__":

@@ -26,6 +26,30 @@ header {
     background: white;
     padding: 20px;
     border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+input {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+}
+
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn {
+    background: #2563eb;
+    color: white;
+}
+
+.btn-danger {
+    background: red;
+    color: white;
 }
 
 table {
@@ -40,8 +64,8 @@ th {
 }
 
 td {
-    padding: 8px;
     text-align: center;
+    padding: 8px;
 }
 </style>
 
@@ -56,9 +80,36 @@ td {
 
 <div class="container">
 
-    <div class="card">
-        {{ tabla | safe }}
-    </div>
+<!-- SOLO PC1 VE ESTO -->
+{% if usuario == "PC1" %}
+<div class="card">
+    <h3>➕ Agregar libro</h3>
+
+    <form action="/inventario/agregar" method="post">
+        <input name="codigo" placeholder="Código" required>
+        <input name="nombre" placeholder="Nombre" required>
+        <input name="precio" type="number" placeholder="Precio" required>
+        <input name="stock" type="number" placeholder="Stock" required>
+        <button class="btn">Agregar</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>✏️ Editar stock</h3>
+
+    <form action="/inventario/editar" method="post">
+        <input name="codigo" placeholder="Código del libro" required>
+        <input name="stock" type="number" placeholder="Nuevo stock" required>
+        <button class="btn">Actualizar</button>
+    </form>
+</div>
+{% endif %}
+
+<!-- TODOS VEN INVENTARIO -->
+<div class="card">
+    <h3>📚 Lista de libros</h3>
+    {{ tabla | safe }}
+</div>
 
 </div>
 
