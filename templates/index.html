@@ -98,7 +98,7 @@ button:hover {
     width: 100%;
 }
 
-/* BOTONES ENLACE (CORREGIDOS) */
+/* LINKS BOTONES */
 .btn-link {
     display: inline-block;
     padding: 8px 12px;
@@ -201,7 +201,6 @@ tr:nth-child(even) {
 <div class="card">
     <h2>Agregar Producto</h2>
 
-    <!-- FILTROS -->
     <form method="get">
         <div class="filtros">
             <select name="editorial" onchange="this.form.submit()">
@@ -220,17 +219,14 @@ tr:nth-child(even) {
         </div>
     </form>
 
-    <!-- ACCIONES -->
     <div class="top-actions">
         <a href="/" class="btn-link btn-ver">Limpiar filtros</a>
 
         <div class="acciones-superiores">
             <a href="/ventas" class="btn-link btn-ventas">📊 Ver ventas</a>
-            <a href="/descargar_ventas" class="btn-link btn-descargar">📥 Excel</a>
         </div>
     </div>
 
-    <!-- AGREGAR -->
     <form action="/agregar" method="post">
         <input type="text" name="codigo" placeholder="Código o nombre" required>
         <input type="number" name="cantidad" min="1" required>
