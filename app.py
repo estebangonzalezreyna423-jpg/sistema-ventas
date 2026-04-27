@@ -32,24 +32,25 @@ def init_db():
     conn = get_conn()
     if not conn:
         return
-    cur = conn.cursor()
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS ventas (
-            id SERIAL PRIMARY KEY,
-            usuario TEXT,
-            codigo TEXT,
-            nombre TEXT,
-            cantidad INT,
-            subtotal FLOAT,
-            metodo TEXT,
-            fecha TIMESTAMP
-        )
-    """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS ventas (
+                id SERIAL PRIMARY KEY,
+                usuario TEXT,
+                codigo TEXT,
+                nombre TEXT,
+                cantidad INT,
+                subtotal FLOAT,
+                metodo TEXT,
+                fecha TIMESTAMP
+            )
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+    except:
+        pass
 
 
 # =============================
@@ -113,7 +114,7 @@ def logout():
 
 
 # =============================
-# INDEX (🔥 FILTROS ARREGLADOS)
+# INDEX (FILTROS ESTABLES)
 # =============================
 @app.route("/")
 def index():
@@ -128,28 +129,23 @@ def index():
     col_editorial = buscar_columna(df, ["EDITORIAL"])
     col_categoria = buscar_columna(df, ["CATEGORIA"])
 
-    # 🔥 FILTROS DEL FRONT
     editorial_filtro = limpiar_texto(request.args.get("editorial"))
     categoria_filtro = limpiar_texto(request.args.get("categoria"))
 
-    # 🔥 APLICAR FILTROS
     df_filtrado = df.copy()
 
     if col_editorial and editorial_filtro:
-        df_filtrado = df_filtrado[df_filtrado[col_editorial].astype(str).str.upper() == editorial_filtro]
+        df_filtrado = df_filtrado[
+            df_filtrado[col_editorial].astype(str).str.upper() == editorial_filtro
+        ]
 
     if col_categoria and categoria_filtro:
-        df_filtrado = df_filtrado[df_filtrado[col_categoria].astype(str).str.upper() == categoria_filtro]
+        df_filtrado = df_filtrado[
+            df_filtrado[col_categoria].astype(str).str.upper() == categoria_filtro
+        ]
 
-    # 🔥 LISTAS PARA SELECTS
-    editoriales = []
-    categorias = []
-
-    if col_editorial:
-        editoriales = sorted(df[col_editorial].dropna().astype(str).str.upper().unique())
-
-    if col_categoria:
-        categorias = sorted(df[col_categoria].dropna().astype(str).str.upper().unique())
+    editoriales = sorted(df[col_editorial].dropna().astype(str).str.upper().unique()) if col_editorial else []
+    categorias = sorted(df[col_categoria].dropna().astype(str).str.upper().unique()) if col_categoria else []
 
     return render_template(
         "index.html",
@@ -218,7 +214,7 @@ def agregar():
 
 
 # =============================
-# RESTO IGUAL (NO SE ROMPE NADA)
+# ELIMINAR
 # =============================
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
@@ -229,6 +225,9 @@ def eliminar(index):
     return redirect("/")
 
 
+# =============================
+# FINALIZAR
+# =============================
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
     if login_requerido():
@@ -284,6 +283,9 @@ def finalizar(metodo):
     return redirect("/")
 
 
+# =============================
+# VENTAS
+# =============================
 @app.route("/ventas")
 def ver_ventas():
     if login_requerido():
@@ -306,6 +308,9 @@ def ver_ventas():
     )
 
 
+# =============================
+# DESCARGAR
+# =============================
 @app.route("/descargar_ventas")
 def descargar_ventas():
     conn = get_conn()
@@ -321,6 +326,9 @@ def descargar_ventas():
     return send_file(file, as_attachment=True)
 
 
+# =============================
+# INIT
+# =============================
 init_db()
 
 if __name__ == "__main__":

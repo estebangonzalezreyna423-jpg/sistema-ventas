@@ -2,113 +2,39 @@
 <html>
 <head>
     <title>Inventario</title>
-
-<style>
-body {
-    font-family: Arial;
-    margin: 0;
-    background: #eef2f7;
-}
-
-header {
-    background: #1e3a8a;
-    color: white;
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-}
-
-.container {
-    padding: 20px;
-}
-
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-input {
-    width: 100%;
-    padding: 8px;
-    margin: 5px 0;
-}
-
-button {
-    padding: 10px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.btn {
-    background: #2563eb;
-    color: white;
-}
-
-.btn-danger {
-    background: red;
-    color: white;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th {
-    background: #1e3a8a;
-    color: white;
-    padding: 8px;
-}
-
-td {
-    text-align: center;
-    padding: 8px;
-}
-</style>
-
+    <style>
+        body { font-family: Arial; background:#eef2f7; margin:0; }
+        header { background:#1e3a8a; color:white; padding:15px; }
+        .container { padding:20px; }
+        .card { background:white; padding:20px; border-radius:10px; }
+        input { padding:10px; margin:5px 0; width:100%; }
+        button { padding:10px; background:#2563eb; color:white; border:none; width:100%; }
+        table { width:100%; margin-top:20px; border-collapse:collapse; }
+        th { background:#1e3a8a; color:white; }
+        td, th { padding:8px; text-align:center; }
+    </style>
 </head>
-
 <body>
 
 <header>
     <h1>📦 INVENTARIO</h1>
-    <a href="/" style="color:white;">Volver</a>
 </header>
 
 <div class="container">
 
-<!-- SOLO PC1 VE ESTO -->
-{% if usuario == "PC1" %}
 <div class="card">
-    <h3>➕ Agregar libro</h3>
 
-    <form action="/inventario/agregar" method="post">
-        <input name="codigo" placeholder="Código" required>
-        <input name="nombre" placeholder="Nombre" required>
-        <input name="precio" type="number" placeholder="Precio" required>
-        <input name="stock" type="number" placeholder="Stock" required>
-        <button class="btn">Agregar</button>
-    </form>
-</div>
+<h2>Editar Stock</h2>
 
-<div class="card">
-    <h3>✏️ Editar stock</h3>
+<form method="post">
+    <input name="codigo" placeholder="Código del producto" required>
+    <input name="stock" type="number" placeholder="Nuevo stock" required>
+    <button type="submit">Actualizar</button>
+</form>
 
-    <form action="/inventario/editar" method="post">
-        <input name="codigo" placeholder="Código del libro" required>
-        <input name="stock" type="number" placeholder="Nuevo stock" required>
-        <button class="btn">Actualizar</button>
-    </form>
-</div>
-{% endif %}
+<h2>Lista</h2>
+{{ tabla|safe }}
 
-<!-- TODOS VEN INVENTARIO -->
-<div class="card">
-    <h3>📚 Lista de libros</h3>
-    {{ tabla | safe }}
 </div>
 
 </div>
