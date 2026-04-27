@@ -116,6 +116,10 @@ button:hover {
     background: #0ea5e9;
 }
 
+.btn-inventario {
+    background: #10b981;
+}
+
 /* TABLA */
 table {
     width: 100%;
@@ -184,7 +188,13 @@ tr:nth-child(even) {
 
     <div class="usuario">
         Usuario: {{ usuario }}
+
         <a href="/ventas" class="btn-link btn-ventas">📊 Ventas</a>
+
+        {% if usuario == "PC1" %}
+            <a href="/inventario" class="btn-link btn-inventario">📦 Inventario</a>
+        {% endif %}
+
         <a href="/logout" class="btn-link">Cerrar sesión</a>
     </div>
 </header>
