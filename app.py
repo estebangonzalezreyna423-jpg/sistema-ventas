@@ -32,25 +32,24 @@ def init_db():
     conn = get_conn()
     if not conn:
         return
-    try:
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS ventas (
-                id SERIAL PRIMARY KEY,
-                usuario TEXT,
-                codigo TEXT,
-                nombre TEXT,
-                cantidad INT,
-                subtotal FLOAT,
-                metodo TEXT,
-                fecha TIMESTAMP
-            )
-        """)
-        conn.commit()
-        cur.close()
-        conn.close()
-    except:
-        pass
+    cur = conn.cursor()
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS ventas (
+            id SERIAL PRIMARY KEY,
+            usuario TEXT,
+            codigo TEXT,
+            nombre TEXT,
+            cantidad INT,
+            subtotal FLOAT,
+            metodo TEXT,
+            fecha TIMESTAMP
+        )
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 # =============================
@@ -154,7 +153,7 @@ def index():
 
 
 # =============================
-# INVENTARIO (NUEVO)
+# INVENTARIO
 # =============================
 @app.route("/inventario")
 def inventario():
@@ -316,7 +315,7 @@ def finalizar(metodo):
 
 
 # =============================
-# VENTAS
+# VENTAS (CON TOTALES SEPARADOS)
 # =============================
 @app.route("/ventas")
 def ver_ventas():
@@ -332,10 +331,19 @@ def ver_ventas():
 
     total = float(df["subtotal"].sum()) if not df.empty else 0
 
+    total_efectivo = 0
+    total_yape = 0
+
+    if not df.empty and "metodo" in df.columns:
+        total_efectivo = float(df[df["metodo"] == "EFECTIVO"]["subtotal"].sum())
+        total_yape = float(df[df["metodo"] == "YAPE"]["subtotal"].sum())
+
     return render_template(
         "ventas.html",
         tabla=df.to_html(index=False, classes="tabla"),
         total=total,
+        total_efectivo=total_efectivo,
+        total_yape=total_yape,
         usuario=session.get("user")
     )
 

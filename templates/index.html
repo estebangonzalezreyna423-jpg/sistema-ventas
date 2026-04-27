@@ -20,13 +20,9 @@ header {
     align-items: center;
 }
 
-header h1 {
-    margin: 0;
-}
+header h1 { margin: 0; }
 
-.usuario {
-    font-size: 14px;
-}
+.usuario { font-size: 14px; }
 
 .usuario a {
     color: white;
@@ -35,9 +31,7 @@ header h1 {
 }
 
 /* LAYOUT */
-.container {
-    padding: 20px;
-}
+.container { padding: 20px; }
 
 .grid {
     display: grid;
@@ -70,22 +64,18 @@ button {
     cursor: pointer;
 }
 
-button:hover {
-    opacity: 0.9;
-}
-
-.btn-agregar {
-    width: 100%;
-    background: #2563eb;
-    color: white;
-}
+.btn-agregar { width: 100%; background: #2563eb; color: white; }
 
 .btn-eliminar {
     background: red;
     color: white;
-    padding: 5px 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-block;
 }
 
+/* BOTONES PAGO */
 .btn-finalizar {
     background: #16a34a;
     color: white;
@@ -98,9 +88,8 @@ button:hover {
     width: 100%;
 }
 
-/* LINKS BOTONES */
+/* LINKS */
 .btn-link {
-    display: inline-block;
     padding: 8px 12px;
     border-radius: 6px;
     text-decoration: none;
@@ -108,17 +97,8 @@ button:hover {
     margin-left: 10px;
 }
 
-.btn-ventas {
-    background: #f59e0b;
-}
-
-.btn-ver {
-    background: #0ea5e9;
-}
-
-.btn-inventario {
-    background: #10b981;
-}
+.btn-ventas { background: #f59e0b; }
+.btn-inventario { background: #10b981; }
 
 /* TABLA */
 table {
@@ -137,22 +117,13 @@ td {
     text-align: center;
 }
 
-tr:nth-child(even) {
-    background: #f1f5f9;
-}
+tr:nth-child(even) { background: #f1f5f9; }
 
 /* TOTAL */
 .total {
     font-size: 20px;
     margin-top: 10px;
     font-weight: bold;
-}
-
-/* BOTONES PAGO */
-.botones-pago {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
 }
 
 /* INVENTARIO */
@@ -166,16 +137,11 @@ tr:nth-child(even) {
     gap: 10px;
 }
 
-/* TOP ACTIONS */
+/* TOP */
 .top-actions {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
-    align-items: center;
-}
-
-.acciones-superiores {
-    display: flex;
     align-items: center;
 }
 </style>
@@ -192,7 +158,7 @@ tr:nth-child(even) {
         <a href="/ventas" class="btn-link btn-ventas">Ventas</a>
 
         {% if usuario == "PC1" %}
-            <a href="/inventario" class="btn-link btn-ver"> Inventario</a>
+            <a href="/inventario" class="btn-link btn-inventario">Inventario</a>
         {% endif %}
 
         <a href="/logout" class="btn-link">Cerrar sesión</a>
@@ -226,17 +192,14 @@ tr:nth-child(even) {
     </form>
 
     <div class="top-actions">
-        <a href="/" class="btn-link btn-ver">Limpiar filtros</a>
-
-        <div class="acciones-superiores">
-            <a href="/ventas" class="btn-link btn-ventas"> Ver ventas</a>
-        </div>
+        <a href="/" class="btn-link btn-inventario">Limpiar filtros</a>
+        <a href="/ventas" class="btn-link btn-ventas">Ver ventas</a>
     </div>
 
     <form action="/agregar" method="post">
         <input type="text" name="codigo" placeholder="Código o nombre" required>
         <input type="number" name="cantidad" min="1" required>
-        <button type="submit" class="btn-agregar">Agregar al carrito</button>
+        <button class="btn-agregar">Agregar al carrito</button>
     </form>
 </div>
 
@@ -262,25 +225,21 @@ tr:nth-child(even) {
             <td>{{ item.cantidad }}</td>
             <td>S/ {{ item.subtotal }}</td>
             <td>
-                <a href="/eliminar/{{ loop.index0 }}">
-                    <button type="button" class="btn-eliminar">X</button>
-                </a>
+                <a href="/eliminar/{{ loop.index0 }}" class="btn-eliminar">X</a>
             </td>
         </tr>
         {% endfor %}
     </table>
 
-    <div class="total">
-        Total: S/ {{ total }}
-    </div>
+    <div class="total">Total: S/ {{ total }}</div>
 
     <div class="botones-pago">
         <a href="/finalizar/efectivo">
-            <button type="button" class="btn-finalizar">Efectivo</button>
+            <button class="btn-finalizar">Efectivo</button>
         </a>
 
         <a href="/finalizar/yape">
-            <button type="button" class="btn-yape">Yape</button>
+            <button class="btn-yape">Yape</button>
         </a>
     </div>
 </div>
