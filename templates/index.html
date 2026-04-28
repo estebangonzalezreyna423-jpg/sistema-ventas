@@ -151,6 +151,11 @@ tr:nth-child(even) {
     margin-bottom: 10px;
     align-items: center;
 }
+
+/* INVENTARIO ABAJO */
+.inventario {
+    margin-top: 20px;
+}
 </style>
 </head>
 
@@ -245,6 +250,15 @@ tr:nth-child(even) {
     </div>
 </div>
 
+</div>
+
+<!-- 🔥 INVENTARIO ABAJO (ESTO ERA LO QUE FALTABA) -->
+<div class="card inventario">
+    <h2>📦 Inventario</h2>
+
+    <div style="overflow-x:auto;">
+        {{ tabla | safe }}
+    </div>
 </div>
 
 </div>

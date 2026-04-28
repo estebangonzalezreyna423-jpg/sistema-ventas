@@ -114,11 +114,11 @@ function toggle(id) {
     {% if usuario == "PC1" %}
 
     <button class="btn btn-toggle" onclick="toggle('formEditar')">
-        ✏️ Editar Stock
+         Editar Stock
     </button>
 
     <button class="btn btn-toggle" onclick="toggle('formAgregar')">
-        📚 Agregar / Eliminar Libro
+         Agregar / Eliminar Libro
     </button>
 
     {% else %}
@@ -150,7 +150,7 @@ function toggle(id) {
 <!-- ===================== -->
 <div id="formAgregar" class="card hidden">
 
-    <h2>📚 Agregar Libro</h2>
+    <h2>Agregar Libro</h2>
 
     <form method="POST" action="/inventario/agregar">
 
@@ -170,7 +170,7 @@ function toggle(id) {
 
     <hr>
 
-    <h3>❌ Eliminar Libro</h3>
+    <h3> Eliminar Libro</h3>
 
     <form method="POST" action="/inventario/eliminar">
         <input type="text" name="codigo" placeholder="Código del libro" required>
@@ -183,7 +183,7 @@ function toggle(id) {
 <!-- LISTA -->
 <!-- ===================== -->
 <div class="card">
-    <h2>📦 Lista de productos</h2>
+    <h2> Lista de productos</h2>
     {{ tabla|safe }}
 </div>
 
