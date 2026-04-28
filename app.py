@@ -52,20 +52,23 @@ def init_db():
 
 
 # =============================
-# UTILIDADES
+# UTILIDADES (FIX IMPORTANTE)
 # =============================
 def cargar_excel():
+    columnas = ["CODIGO","NOMBRE","PRECIO","STOCK","EDITORIAL","CATEGORIA"]
+
     if not os.path.exists(ARCHIVO):
-        df = pd.DataFrame(columns=["CODIGO","NOMBRE","PRECIO","STOCK","EDITORIAL","CATEGORIA"])
+        df = pd.DataFrame(columns=columnas)
         df.to_excel(ARCHIVO, index=False)
         return df
 
     df = pd.read_excel(ARCHIVO)
-    df.columns = df.columns.astype(str).str.strip().str.upper()
 
-    for col in ["CODIGO","NOMBRE","PRECIO","STOCK","EDITORIAL","CATEGORIA"]:
-        if col not in df.columns:
-            df[col] = ""
+    df.columns = [c.strip().upper() for c in df.columns]
+
+    df = df.reindex(columns=columnas)
+
+    df = df.fillna("")
 
     return df
 
@@ -148,7 +151,7 @@ def inventario():
 
 
 # =============================
-# AGREGAR
+# AGREGAR (FIX)
 # =============================
 @app.route("/inventario/agregar", methods=["POST"])
 def agregar_producto():
@@ -157,23 +160,33 @@ def agregar_producto():
 
     df = cargar_excel()
 
-    nuevo = {
-        "CODIGO": limpiar(request.form.get("codigo")),
-        "NOMBRE": request.form.get("nombre"),
-        "PRECIO": float(request.form.get("precio") or 0),
-        "STOCK": int(request.form.get("stock") or 0),
-        "EDITORIAL": request.form.get("editorial"),
-        "CATEGORIA": request.form.get("categoria")
-    }
+    codigo = limpiar(request.form.get("codigo"))
+    nombre = request.form.get("nombre")
 
-    df = pd.concat([df, pd.DataFrame([nuevo])], ignore_index=True)
-    guardar_excel(df)
+    if not codigo or not nombre:
+        return redirect("/inventario")
+
+    try:
+        nuevo = {
+            "CODIGO": codigo,
+            "NOMBRE": nombre,
+            "PRECIO": float(request.form.get("precio") or 0),
+            "STOCK": int(request.form.get("stock") or 0),
+            "EDITORIAL": request.form.get("editorial") or "",
+            "CATEGORIA": request.form.get("categoria") or ""
+        }
+
+        df = pd.concat([df, pd.DataFrame([nuevo])], ignore_index=True)
+        guardar_excel(df)
+
+    except:
+        pass
 
     return redirect("/inventario")
 
 
 # =============================
-# ACTUALIZAR (FIX)
+# ACTUALIZAR
 # =============================
 @app.route("/inventario/actualizar", methods=["POST"])
 def actualizar_producto():
@@ -200,7 +213,7 @@ def actualizar_producto():
 
 
 # =============================
-# ELIMINAR (FIX POST)
+# ELIMINAR
 # =============================
 @app.route("/inventario/eliminar", methods=["POST"])
 def eliminar_producto():
@@ -223,6 +236,7 @@ def eliminar_producto():
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
     carrito = session.get("carrito", [])
+
     if 0 <= index < len(carrito):
         carrito.pop(index)
 
@@ -263,7 +277,7 @@ def agregar():
 
 
 # =============================
-# FINALIZAR (FIX CLAVE)
+# FINALIZAR
 # =============================
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
