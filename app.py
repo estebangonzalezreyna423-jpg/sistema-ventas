@@ -109,7 +109,7 @@ def logout():
 
 
 # =============================
-# INDEX (CON FILTROS + TABLA)
+# INDEX (ARREGLADO)
 # =============================
 @app.route("/")
 def index():
@@ -118,18 +118,21 @@ def index():
 
     df = cargar_excel()
 
-    # 🔥 FILTROS
     editorial = request.args.get("editorial")
     categoria = request.args.get("categoria")
 
+    # 🔥 FILTROS SEGUROS
     if editorial:
-        df = df[df["EDITORIAL"] == editorial]
+        df = df[df["EDITORIAL"].astype(str).str.strip() == editorial]
 
     if categoria:
-        df = df[df["CATEGORIA"] == categoria]
+        df = df[df["CATEGORIA"].astype(str).str.strip() == categoria]
 
-    editoriales = sorted(cargar_excel()["EDITORIAL"].dropna().unique())
-    categorias = sorted(cargar_excel()["CATEGORIA"].dropna().unique())
+    # 🔥 LISTAS SEGURAS (SIN SORTED)
+    df_base = cargar_excel()
+
+    editoriales = df_base["EDITORIAL"].dropna().astype(str).unique().tolist()
+    categorias = df_base["CATEGORIA"].dropna().astype(str).unique().tolist()
 
     carrito = session.get("carrito", [])
     total = sum(i["subtotal"] for i in carrito)
@@ -201,7 +204,7 @@ def agregar_libro():
 
 
 # =============================
-# 🆕 ELIMINAR VENTA + DEVOLVER STOCK
+# ELIMINAR VENTA + DEVOLVER STOCK
 # =============================
 @app.route("/ventas/eliminar/<int:id>")
 def eliminar_venta(id):
@@ -226,7 +229,11 @@ def eliminar_venta(id):
 
             if len(idx) > 0:
                 i = idx[0]
-                df.at[i, "STOCK"] = int(df.at[i, "STOCK"]) + int(cantidad)
+                try:
+                    df.at[i, "STOCK"] = int(df.at[i, "STOCK"]) + int(cantidad)
+                except:
+                    df.at[i, "STOCK"] = int(cantidad)
+
                 guardar_excel(df)
 
             cur.execute("DELETE FROM ventas WHERE id = %s", (id,))
@@ -242,7 +249,7 @@ def eliminar_venta(id):
 
 
 # =============================
-# CARRITO
+# CARRITO (ARREGLADO)
 # =============================
 @app.route("/agregar", methods=["POST"])
 def agregar():
@@ -267,7 +274,12 @@ def agregar():
 
     item = fila.iloc[0]
 
-    if int(item["STOCK"]) < cantidad:
+    try:
+        stock = int(item["STOCK"])
+    except:
+        stock = 0
+
+    if stock < cantidad:
         return redirect("/")
 
     carrito.append({
@@ -303,7 +315,10 @@ def finalizar(metodo):
 
         if len(idx) > 0:
             pos = idx[0]
-            df.at[pos, "STOCK"] = max(0, int(df.at[pos, "STOCK"]) - i["cantidad"])
+            try:
+                df.at[pos, "STOCK"] = max(0, int(df.at[pos, "STOCK"]) - i["cantidad"])
+            except:
+                df.at[pos, "STOCK"] = 0
 
         if conn:
             cur = conn.cursor()
@@ -339,7 +354,7 @@ def ventas():
     conn = get_conn()
 
     if not conn:
-        return "❌ No hay base de datos"
+        return render_template("ventas.html", ventas=[], total=0, total_efectivo=0, total_yape=0)
 
     df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
     conn.close()
