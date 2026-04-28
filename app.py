@@ -52,7 +52,7 @@ def init_db():
 
 
 # =============================
-# UTILIDADES (🔥 CLAVE)
+# UTILIDADES
 # =============================
 def cargar_excel():
     if not os.path.exists(ARCHIVO):
@@ -62,13 +62,15 @@ def cargar_excel():
         for i in range(5):
             df = pd.read_excel(ARCHIVO, header=i)
             df.columns = df.columns.astype(str).str.strip().str.upper()
-
             if "CODIGO" in df.columns:
                 return df
-
         return pd.DataFrame()
     except:
         return pd.DataFrame()
+
+
+def guardar_excel(df):
+    df.to_excel(ARCHIVO, index=False)
 
 
 def buscar_columna(df, palabras):
@@ -112,7 +114,7 @@ def logout():
 
 
 # =============================
-# INDEX (🔥 ESTABLE)
+# INDEX
 # =============================
 @app.route("/")
 def index():
@@ -121,7 +123,7 @@ def index():
 
     df = cargar_excel()
     if df.empty:
-        return "❌ No hay inventario válido"
+        return "❌ No hay inventario"
 
     col_editorial = buscar_columna(df, ["EDITORIAL"])
     col_categoria = buscar_columna(df, ["CATEGORIA"])
@@ -155,7 +157,7 @@ def index():
 
 
 # =============================
-# INVENTARIO (🔥 FIX)
+# INVENTARIO (VER)
 # =============================
 @app.route("/inventario")
 def inventario():
@@ -167,9 +169,6 @@ def inventario():
 
     df = cargar_excel()
 
-    if df.empty:
-        return "❌ Inventario vacío o mal formado"
-
     return render_template(
         "inventario.html",
         tabla=df.to_html(index=False, classes="tabla"),
@@ -178,7 +177,80 @@ def inventario():
 
 
 # =============================
-# AGREGAR (🔥 CLAVE ARREGLADO)
+# INVENTARIO - AGREGAR
+# =============================
+@app.route("/inventario/agregar", methods=["POST"])
+def agregar_producto():
+    if session.get("user") != "PC1":
+        return redirect("/")
+
+    df = cargar_excel()
+
+    nuevo = {
+        "CODIGO": limpiar(request.form.get("codigo")),
+        "NOMBRE": request.form.get("nombre"),
+        "PRECIO": float(request.form.get("precio")),
+        "STOCK": int(request.form.get("stock")),
+        "EDITORIAL": request.form.get("editorial"),
+        "CATEGORIA": request.form.get("categoria")
+    }
+
+    df = pd.concat([df, pd.DataFrame([nuevo])], ignore_index=True)
+    guardar_excel(df)
+
+    return redirect("/inventario")
+
+
+# =============================
+# INVENTARIO - ACTUALIZAR
+# =============================
+@app.route("/inventario/actualizar", methods=["POST"])
+def actualizar_producto():
+    if session.get("user") != "PC1":
+        return redirect("/")
+
+    df = cargar_excel()
+
+    codigo = limpiar(request.form.get("codigo"))
+
+    idx = df[df["CODIGO"].astype(str).str.upper() == codigo].index
+
+    if len(idx) > 0:
+        i = idx[0]
+
+        if request.form.get("precio"):
+            df.at[i, "PRECIO"] = float(request.form.get("precio"))
+
+        if request.form.get("stock"):
+            df.at[i, "STOCK"] = int(request.form.get("stock"))
+
+        guardar_excel(df)
+
+    return redirect("/inventario")
+
+
+# =============================
+# ELIMINAR VENTA (🔥 FIX)
+# =============================
+@app.route("/ventas/eliminar/<int:id>")
+def eliminar_venta(id):
+    conn = get_conn()
+    if not conn:
+        return redirect("/ventas")
+
+    cur = conn.cursor()
+
+    cur.execute("DELETE FROM ventas WHERE id = %s", (id,))
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return redirect("/ventas")
+
+
+# =============================
+# AGREGAR AL CARRITO
 # =============================
 @app.route("/agregar", methods=["POST"])
 def agregar():
@@ -189,63 +261,22 @@ def agregar():
     carrito = session.get("carrito", [])
 
     codigo = limpiar(request.form.get("codigo"))
-    cantidad = request.form.get("cantidad")
+    cantidad = int(request.form.get("cantidad"))
 
-    try:
-        cantidad = int(cantidad)
-        if cantidad <= 0:
-            return redirect("/")
-    except:
-        return redirect("/")
-
-    col_codigo = buscar_columna(df, ["CODIGO"])
-    col_nombre = buscar_columna(df, ["NOMBRE"])
-    col_precio = buscar_columna(df, ["PRECIO", "COSTO"])
-    col_stock = buscar_columna(df, ["STOCK"])
-
-    if not all([col_codigo, col_nombre, col_precio, col_stock]):
-        return "❌ Columnas mal en Excel"
-
-    fila = df[
-        (df[col_codigo].astype(str).str.upper() == codigo) |
-        (df[col_nombre].astype(str).str.upper().str.contains(codigo, na=False))
-    ]
+    fila = df[df["CODIGO"].astype(str).str.upper() == codigo]
 
     if fila.empty:
         return redirect("/")
 
     item = fila.iloc[0]
 
-    try:
-        precio = float(str(item[col_precio]).replace("S/", "").strip())
-        stock = int(item[col_stock])
-    except:
-        return redirect("/")
-
-    if stock < cantidad:
-        return redirect("/")
-
     carrito.append({
-        "codigo": item[col_codigo],
-        "nombre": item[col_nombre],
-        "precio": precio,
+        "codigo": item["CODIGO"],
+        "nombre": item["NOMBRE"],
+        "precio": float(item["PRECIO"]),
         "cantidad": cantidad,
-        "subtotal": precio * cantidad
+        "subtotal": float(item["PRECIO"]) * cantidad
     })
-
-    session["carrito"] = carrito
-    return redirect("/")
-
-
-# =============================
-# ELIMINAR CARRITO
-# =============================
-@app.route("/eliminar/<int:index>")
-def eliminar(index):
-    carrito = session.get("carrito", [])
-
-    if 0 <= index < len(carrito):
-        carrito.pop(index)
 
     session["carrito"] = carrito
     return redirect("/")
@@ -256,95 +287,64 @@ def eliminar(index):
 # =============================
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
-    if login_requerido():
-        return redirect("/login")
-
     carrito = session.get("carrito", [])
-    if not carrito:
-        return redirect("/")
-
     df = cargar_excel()
+
     conn = get_conn()
-    now = datetime.now()
+    cur = conn.cursor() if conn else None
 
-    col_codigo = buscar_columna(df, ["CODIGO"])
-    col_stock = buscar_columna(df, ["STOCK"])
-    col_nombre = buscar_columna(df, ["NOMBRE"])
-    col_ventas = buscar_columna(df, ["VENTA"])  # 🔥 ESTA ES LA CLAVE
+    ahora = datetime.now()
 
-    for i in carrito:
-        idx = df[df[col_codigo] == i["codigo"]].index
+    for item in carrito:
+        idx = df[df["CODIGO"] == item["codigo"]].index
 
         if len(idx) > 0:
-            pos = idx[0]
+            i = idx[0]
+            df.at[i, "STOCK"] -= item["cantidad"]
 
-            # 🔻 BAJA STOCK
-            df.at[pos, col_stock] = max(0, int(df.at[pos, col_stock]) - i["cantidad"])
-
-            # 🔥 SUBE VENTAS (ESTO FALTABA)
-            if col_ventas:
-                actual = df.at[pos, col_ventas]
-                try:
-                    actual = int(actual)
-                except:
-                    actual = 0
-
-                df.at[pos, col_ventas] = actual + i["cantidad"]
-
-        # GUARDAR EN BD
-        if conn:
-            cur = conn.cursor()
+        if cur:
             cur.execute("""
                 INSERT INTO ventas (usuario, codigo, nombre, cantidad, subtotal, metodo, fecha)
                 VALUES (%s,%s,%s,%s,%s,%s,%s)
             """, (
                 session["user"],
-                i["codigo"],
-                i["nombre"],
-                i["cantidad"],
-                i["subtotal"],
+                item["codigo"],
+                item["nombre"],
+                item["cantidad"],
+                item["subtotal"],
                 metodo.upper(),
-                now
+                ahora
             ))
-            conn.commit()
-            cur.close()
 
     if conn:
+        conn.commit()
+        cur.close()
         conn.close()
 
-    df.to_excel(ARCHIVO, index=False)
+    guardar_excel(df)
     session["carrito"] = []
 
     return redirect("/")
 
 
 # =============================
-# VENTAS (🔥 FIX TOTAL)
+# VER VENTAS
 # =============================
 @app.route("/ventas")
 def ventas():
     conn = get_conn()
 
     if not conn:
-        return render_template("ventas.html", ventas=[], total=0, total_efectivo=0, total_yape=0)
+        return render_template("ventas.html", ventas=[])
 
-    try:
-        df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
-        conn.close()
-    except:
-        return "❌ Error leyendo ventas"
-
-    if df.empty:
-        return render_template("ventas.html", ventas=[], total=0, total_efectivo=0, total_yape=0)
+    df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
+    conn.close()
 
     df.columns = df.columns.str.lower()
 
     return render_template(
         "ventas.html",
         ventas=df.to_dict(orient="records"),
-        total=df["subtotal"].sum(),
-        total_efectivo=df[df["metodo"] == "EFECTIVO"]["subtotal"].sum(),
-        total_yape=df[df["metodo"] == "YAPE"]["subtotal"].sum(),
         usuario=session.get("user")
     )
 
