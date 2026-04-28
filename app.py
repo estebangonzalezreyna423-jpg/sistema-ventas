@@ -52,7 +52,7 @@ def init_db():
 
 
 # =============================
-# UTILIDADES (FIX IMPORTANTE)
+# UTILIDADES (FIX REAL)
 # =============================
 def cargar_excel():
     columnas = ["CODIGO","NOMBRE","PRECIO","STOCK","EDITORIAL","CATEGORIA"]
@@ -64,10 +64,13 @@ def cargar_excel():
 
     df = pd.read_excel(ARCHIVO)
 
+    # normalizar columnas
     df.columns = [c.strip().upper() for c in df.columns]
 
+    # asegurar estructura fija (evita duplicados)
     df = df.reindex(columns=columnas)
 
+    # limpiar vacíos (NaN → "")
     df = df.fillna("")
 
     return df
@@ -163,6 +166,7 @@ def agregar_producto():
     codigo = limpiar(request.form.get("codigo"))
     nombre = request.form.get("nombre")
 
+    # evita filas vacías
     if not codigo or not nombre:
         return redirect("/inventario")
 
