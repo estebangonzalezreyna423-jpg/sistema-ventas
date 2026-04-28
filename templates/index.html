@@ -78,7 +78,7 @@ button {
     text-decoration: none;
 }
 
-/* BOTONES PAGO (PROFESIONAL) */
+/* BOTONES PAGO */
 .botones-pago {
     display: flex;
     gap: 10px;
@@ -136,11 +136,6 @@ tr:nth-child(even) {
     font-size: 18px;
     margin-top: 10px;
     font-weight: bold;
-}
-
-/* INVENTARIO */
-.inventario {
-    margin-top: 20px;
 }
 
 /* FILTROS */
@@ -208,7 +203,7 @@ tr:nth-child(even) {
     </div>
 
     <form action="/agregar" method="post">
-        <input type="text" name="codigo" placeholder="Código o nombre" required>
+        <input type="text" name="codigo" placeholder="Código del producto" required>
         <input type="number" name="cantidad" min="1" required>
         <button class="btn-agregar">Agregar al carrito</button>
     </form>
@@ -250,12 +245,6 @@ tr:nth-child(even) {
     </div>
 </div>
 
-</div>
-
-<!-- INVENTARIO -->
-<div class="card inventario">
-    <h2>Inventario</h2>
-    {{ tabla|safe }}
 </div>
 
 </div>

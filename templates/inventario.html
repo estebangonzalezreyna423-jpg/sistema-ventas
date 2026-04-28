@@ -35,25 +35,13 @@ header {
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    width: 100%;
     margin-top: 8px;
 }
 
-.btn-agregar {
-    background: #2563eb;
-    color: white;
-}
-
-.btn-editar {
-    background: #16a34a;
-    color: white;
-}
-
-.btn-disabled {
-    background: gray;
-    color: white;
-    cursor: not-allowed;
-}
+.btn-agregar { background: #2563eb; color: white; }
+.btn-editar { background: #16a34a; color: white; }
+.btn-eliminar { background: red; color: white; }
+.btn-toggle { background: #f59e0b; color: white; }
 
 /* INPUTS */
 input {
@@ -87,7 +75,21 @@ td {
     grid-template-columns: 1fr 1fr;
     gap: 10px;
 }
+
+/* OCULTAR */
+.hidden {
+    display: none;
+}
 </style>
+
+<script>
+function toggle(id) {
+    document.getElementById("formEditar").classList.add("hidden");
+    document.getElementById("formAgregar").classList.add("hidden");
+
+    document.getElementById(id).classList.remove("hidden");
+}
+</script>
 
 </head>
 
@@ -105,12 +107,50 @@ td {
 <div class="container">
 
 <!-- ===================== -->
-<!-- AGREGAR LIBRO -->
+<!-- BOTONES PRINCIPALES -->
 <!-- ===================== -->
 <div class="card">
-    <h2>📚 Agregar Libro</h2>
 
     {% if usuario == "PC1" %}
+
+    <button class="btn btn-toggle" onclick="toggle('formEditar')">
+        ✏️ Editar Stock
+    </button>
+
+    <button class="btn btn-toggle" onclick="toggle('formAgregar')">
+        📚 Agregar / Eliminar Libro
+    </button>
+
+    {% else %}
+        <p>🔒 Solo PC1 puede modificar inventario</p>
+    {% endif %}
+
+</div>
+
+<!-- ===================== -->
+<!-- EDITAR STOCK -->
+<!-- ===================== -->
+<div id="formEditar" class="card hidden">
+
+    <h2>✏️ Editar Stock / Precio</h2>
+
+    <form method="POST" action="/inventario/editar">
+
+        <input type="text" name="codigo" placeholder="Código del libro" required>
+        <input type="number" name="stock" placeholder="Nuevo stock">
+        <input type="number" name="precio" placeholder="Nuevo precio">
+
+        <button class="btn btn-editar">Actualizar</button>
+    </form>
+
+</div>
+
+<!-- ===================== -->
+<!-- AGREGAR / ELIMINAR -->
+<!-- ===================== -->
+<div id="formAgregar" class="card hidden">
+
+    <h2>📚 Agregar Libro</h2>
 
     <form method="POST" action="/inventario/agregar">
 
@@ -128,41 +168,23 @@ td {
         <button class="btn btn-agregar">Agregar Libro</button>
     </form>
 
-    {% else %}
-        <p>🔒 Solo PC1 puede agregar libros</p>
-    {% endif %}
-</div>
+    <hr>
 
-<!-- ===================== -->
-<!-- EDITAR STOCK / PRECIO -->
-<!-- ===================== -->
-<div class="card">
-    <h2>✏️ Editar Stock / Precio</h2>
+    <h3>❌ Eliminar Libro</h3>
 
-    {% if usuario == "PC1" %}
-
-    <form method="POST" action="/inventario/actualizar">
-
+    <form method="POST" action="/inventario/eliminar">
         <input type="text" name="codigo" placeholder="Código del libro" required>
-        <input type="number" name="stock" placeholder="Nuevo stock">
-        <input type="number" name="precio" placeholder="Nuevo precio">
-
-        <button class="btn btn-editar">Actualizar</button>
+        <button class="btn btn-eliminar">Eliminar Libro</button>
     </form>
 
-    {% else %}
-        <p>🔒 Solo PC1 puede editar inventario</p>
-    {% endif %}
 </div>
 
 <!-- ===================== -->
-<!-- LISTA PRODUCTOS -->
+<!-- LISTA -->
 <!-- ===================== -->
 <div class="card">
     <h2>📦 Lista de productos</h2>
-
     {{ tabla|safe }}
-
 </div>
 
 </div>

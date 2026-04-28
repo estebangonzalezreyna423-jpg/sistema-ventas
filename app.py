@@ -65,7 +65,6 @@ def cargar_excel():
     df = pd.read_excel(ARCHIVO)
     df.columns = df.columns.astype(str).str.strip().str.upper()
 
-    # asegura estructura
     for col in COLUMNAS_BASE:
         if col not in df.columns:
             df[col] = None
@@ -151,7 +150,7 @@ def inventario():
 
 
 # =============================
-# AGREGAR LIBRO NUEVO (PC1)
+# AGREGAR LIBRO
 # =============================
 @app.route("/inventario/agregar", methods=["POST"])
 def agregar_libro():
@@ -161,8 +160,14 @@ def agregar_libro():
     df = cargar_excel()
 
     try:
+        codigo = limpiar(request.form.get("codigo"))
+
+        # evitar duplicados
+        if codigo in df["CODIGO"].astype(str).str.upper().values:
+            return redirect("/inventario")
+
         nuevo = {
-            "CODIGO": limpiar(request.form.get("codigo")),
+            "CODIGO": codigo,
             "NOMBRE": request.form.get("nombre"),
             "PRECIO": float(request.form.get("precio")),
             "CATEGORIA": request.form.get("categoria"),
@@ -206,6 +211,23 @@ def editar_inventario():
 
 
 # =============================
+# ELIMINAR LIBRO
+# =============================
+@app.route("/inventario/eliminar", methods=["POST"])
+def eliminar_libro():
+    if login_requerido() or session.get("user") != "PC1":
+        return redirect("/inventario")
+
+    df = cargar_excel()
+    codigo = limpiar(request.form.get("codigo"))
+
+    df = df[df["CODIGO"].astype(str).str.upper() != codigo]
+    guardar_excel(df)
+
+    return redirect("/inventario")
+
+
+# =============================
 # CARRITO
 # =============================
 @app.route("/agregar", methods=["POST"])
@@ -226,7 +248,12 @@ def agregar():
 
     item = fila.iloc[0]
 
-    if item["STOCK"] < cantidad:
+    try:
+        stock_actual = int(item["STOCK"])
+    except:
+        return redirect("/")
+
+    if stock_actual < cantidad:
         return redirect("/")
 
     carrito.append({
@@ -242,7 +269,7 @@ def agregar():
 
 
 # =============================
-# ELIMINAR
+# ELIMINAR CARRITO
 # =============================
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
@@ -260,6 +287,9 @@ def eliminar(index):
 # =============================
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
+    if login_requerido():
+        return redirect("/login")
+
     carrito = session.get("carrito", [])
     if not carrito:
         return redirect("/")
@@ -273,7 +303,8 @@ def finalizar(metodo):
 
         if len(idx) > 0:
             pos = idx[0]
-            df.at[pos, "STOCK"] -= i["cantidad"]
+            nuevo_stock = int(df.at[pos, "STOCK"]) - i["cantidad"]
+            df.at[pos, "STOCK"] = max(0, nuevo_stock)
 
         if conn:
             cur = conn.cursor()
@@ -307,6 +338,10 @@ def finalizar(metodo):
 @app.route("/ventas")
 def ventas():
     conn = get_conn()
+
+    if not conn:
+        return "❌ No hay base de datos conectada"
+
     df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
     conn.close()
 
