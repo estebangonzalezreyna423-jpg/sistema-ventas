@@ -122,7 +122,7 @@ def index():
 
     return render_template(
         "index.html",
-        tabla=df.to_html(index=False, classes="tabla"),
+        tabla=df.to_html(index=False, classes="tabla"),  # 👈 ESTO FALTABA
         carrito=carrito,
         total=total,
         usuario=session.get("user")
