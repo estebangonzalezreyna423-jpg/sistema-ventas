@@ -56,10 +56,17 @@ def init_db():
 # =============================
 def cargar_excel():
     if not os.path.exists(ARCHIVO):
-        return pd.DataFrame(columns=["CODIGO", "NOMBRE", "PRECIO", "STOCK", "EDITORIAL", "CATEGORIA"])
+        df = pd.DataFrame(columns=["CODIGO","NOMBRE","PRECIO","STOCK","EDITORIAL","CATEGORIA"])
+        df.to_excel(ARCHIVO, index=False)
+        return df
 
     df = pd.read_excel(ARCHIVO)
     df.columns = df.columns.astype(str).str.strip().str.upper()
+
+    # asegurar columnas
+    for col in ["CODIGO","NOMBRE","PRECIO","STOCK","EDITORIAL","CATEGORIA"]:
+        if col not in df.columns:
+            df[col] = ""
 
     return df
 
@@ -152,23 +159,26 @@ def agregar_producto():
 
     df = cargar_excel()
 
-    nuevo = {
-        "CODIGO": limpiar(request.form.get("codigo")),
-        "NOMBRE": request.form.get("nombre"),
-        "PRECIO": float(request.form.get("precio") or 0),
-        "STOCK": int(request.form.get("stock") or 0),
-        "EDITORIAL": request.form.get("editorial"),
-        "CATEGORIA": request.form.get("categoria")
-    }
+    try:
+        nuevo = {
+            "CODIGO": limpiar(request.form.get("codigo")),
+            "NOMBRE": request.form.get("nombre"),
+            "PRECIO": float(request.form.get("precio") or 0),
+            "STOCK": int(request.form.get("stock") or 0),
+            "EDITORIAL": request.form.get("editorial"),
+            "CATEGORIA": request.form.get("categoria")
+        }
 
-    df = pd.concat([df, pd.DataFrame([nuevo])], ignore_index=True)
-    guardar_excel(df)
+        df = pd.concat([df, pd.DataFrame([nuevo])], ignore_index=True)
+        guardar_excel(df)
+    except:
+        pass
 
     return redirect("/inventario")
 
 
 # =============================
-# ACTUALIZAR PRODUCTO (🔥 FIX)
+# ACTUALIZAR PRODUCTO (FIX REAL)
 # =============================
 @app.route("/inventario/actualizar", methods=["POST"])
 def actualizar_producto():
@@ -178,24 +188,31 @@ def actualizar_producto():
     df = cargar_excel()
 
     codigo = limpiar(request.form.get("codigo"))
+
+    if not codigo:
+        return redirect("/inventario")
+
     idx = df[df["CODIGO"].astype(str).str.upper() == codigo].index
 
     if len(idx) > 0:
         i = idx[0]
 
-        if request.form.get("precio"):
-            df.at[i, "PRECIO"] = float(request.form.get("precio"))
+        try:
+            if request.form.get("precio") not in [None, ""]:
+                df.at[i, "PRECIO"] = float(request.form.get("precio"))
 
-        if request.form.get("stock"):
-            df.at[i, "STOCK"] = int(request.form.get("stock"))
+            if request.form.get("stock") not in [None, ""]:
+                df.at[i, "STOCK"] = int(request.form.get("stock"))
 
-        guardar_excel(df)
+            guardar_excel(df)
+        except:
+            pass
 
     return redirect("/inventario")
 
 
 # =============================
-# ELIMINAR PRODUCTO (🔥 NUEVO)
+# ELIMINAR PRODUCTO (FIX REAL)
 # =============================
 @app.route("/inventario/eliminar/<codigo>")
 def eliminar_producto(codigo):
@@ -212,26 +229,23 @@ def eliminar_producto(codigo):
 
 
 # =============================
-# ELIMINAR VENTA
+# ELIMINAR CARRITO (🔥 FIX CLAVE)
 # =============================
-@app.route("/ventas/eliminar/<int:id>")
-def eliminar_venta(id):
-    conn = get_conn()
-    if not conn:
-        return redirect("/ventas")
+@app.route("/eliminar/<int:index>")
+def eliminar(index):
+    carrito = session.get("carrito", [])
 
-    cur = conn.cursor()
-    cur.execute("DELETE FROM ventas WHERE id = %s", (id,))
-    conn.commit()
+    try:
+        carrito.pop(index)
+    except:
+        pass
 
-    cur.close()
-    conn.close()
-
-    return redirect("/ventas")
+    session["carrito"] = carrito
+    return redirect("/")
 
 
 # =============================
-# CARRITO
+# AGREGAR AL CARRITO
 # =============================
 @app.route("/agregar", methods=["POST"])
 def agregar():
@@ -242,7 +256,11 @@ def agregar():
     carrito = session.get("carrito", [])
 
     codigo = limpiar(request.form.get("codigo"))
-    cantidad = int(request.form.get("cantidad"))
+
+    try:
+        cantidad = int(request.form.get("cantidad"))
+    except:
+        return redirect("/")
 
     fila = df[df["CODIGO"].astype(str).str.upper() == codigo]
 
@@ -251,12 +269,17 @@ def agregar():
 
     item = fila.iloc[0]
 
+    try:
+        precio = float(item["PRECIO"])
+    except:
+        precio = 0
+
     carrito.append({
         "codigo": item["CODIGO"],
         "nombre": item["NOMBRE"],
-        "precio": float(item["PRECIO"]),
+        "precio": precio,
         "cantidad": cantidad,
-        "subtotal": float(item["PRECIO"]) * cantidad
+        "subtotal": precio * cantidad
     })
 
     session["carrito"] = carrito
@@ -281,7 +304,7 @@ def finalizar(metodo):
 
         if len(idx) > 0:
             i = idx[0]
-            df.at[i, "STOCK"] -= item["cantidad"]
+            df.at[i, "STOCK"] = max(0, int(df.at[i, "STOCK"]) - item["cantidad"])
 
         if cur:
             cur.execute("""
