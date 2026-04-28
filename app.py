@@ -382,9 +382,14 @@ def ventas():
     df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
     conn.close()
 
+    # 🔥 asegurar nombres correctos
+    df.columns = df.columns.str.lower()
+
+    ventas = df.to_dict(orient="records")
+
     return render_template(
         "ventas.html",
-        tabla=df.to_html(index=False, classes="tabla"),
+        ventas=ventas,
         total=df["subtotal"].sum() if not df.empty else 0,
         total_efectivo=df[df["metodo"] == "EFECTIVO"]["subtotal"].sum() if not df.empty else 0,
         total_yape=df[df["metodo"] == "YAPE"]["subtotal"].sum() if not df.empty else 0,
