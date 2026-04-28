@@ -20,13 +20,9 @@ header {
     align-items: center;
 }
 
-header h1 {
-    margin: 0;
-}
+header h1 { margin: 0; }
 
-.container {
-    padding: 20px;
-}
+.container { padding: 20px; }
 
 /* CARD */
 .card {
@@ -43,15 +39,17 @@ header h1 {
     text-decoration: none;
     color: white;
     margin-left: 10px;
-    display: inline-block;
 }
 
-.btn-back {
-    background: #2563eb;
-}
+.btn-back { background: #2563eb; }
+.btn-download { background: #16a34a; }
 
-.btn-download {
-    background: #16a34a;
+.btn-delete {
+    background: red;
+    color: white;
+    padding: 5px 8px;
+    border-radius: 6px;
+    text-decoration: none;
 }
 
 /* TABLA */
@@ -79,9 +77,8 @@ tr:nth-child(even) {
 /* TOTAL */
 .total {
     margin-top: 15px;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
-    color: #111;
 }
 
 .resumen {
@@ -107,30 +104,62 @@ tr:nth-child(even) {
 
 <div class="container">
 
-    <div class="card">
+<div class="card">
 
-        <h2>Registro de ventas</h2>
+<h2>Registro de ventas</h2>
 
-        {{ tabla | safe }}
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Usuario</th>
+        <th>Código</th>
+        <th>Nombre</th>
+        <th>Cantidad</th>
+        <th>Total</th>
+        <th>Método</th>
+        <th>Fecha</th>
+        <th>Acción</th>
+    </tr>
 
-        <!-- 🔥 RESUMEN NUEVO -->
-        <div class="resumen">
+    {% for v in ventas %}
+    <tr>
+        <td>{{ v.id }}</td>
+        <td>{{ v.usuario }}</td>
+        <td>{{ v.codigo }}</td>
+        <td>{{ v.nombre }}</td>
+        <td>{{ v.cantidad }}</td>
+        <td>S/ {{ v.subtotal }}</td>
+        <td>{{ v.metodo }}</td>
+        <td>{{ v.fecha }}</td>
+        <td>
+            <a href="/ventas/eliminar/{{ v.id }}"
+               class="btn-delete"
+               onclick="return confirm('¿Eliminar esta venta?')">
+               X
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
 
-            <div class="total">
-                 Total vendido: S/ {{ total }}
-            </div>
+<!-- RESUMEN -->
+<div class="resumen">
 
-            <div class="total">
-                 Total en efectivo: S/ {{ total_efectivo }}
-            </div>
-
-            <div class="total">
-                 Total en Yape: S/ {{ total_yape }}
-            </div>
-
-        </div>
-
+    <div class="total">
+        Total vendido: S/ {{ total }}
     </div>
+
+    <div class="total">
+        Total en efectivo: S/ {{ total_efectivo }}
+    </div>
+
+    <div class="total">
+        Total en Yape: S/ {{ total_yape }}
+    </div>
+
+</div>
+
+</div>
 
 </div>
 

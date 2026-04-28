@@ -130,7 +130,7 @@ def index():
 
 
 # =============================
-# INVENTARIO (SOLO PC1)
+# INVENTARIO
 # =============================
 @app.route("/inventario")
 def inventario():
@@ -162,7 +162,6 @@ def agregar_libro():
     try:
         codigo = limpiar(request.form.get("codigo"))
 
-        # evitar duplicados
         if codigo in df["CODIGO"].astype(str).str.upper().values:
             return redirect("/inventario")
 
@@ -228,6 +227,50 @@ def eliminar_libro():
 
 
 # =============================
+# 🆕 ELIMINAR VENTA + DEVOLVER STOCK
+# =============================
+@app.route("/ventas/eliminar/<int:id>")
+def eliminar_venta(id):
+    if login_requerido():
+        return redirect("/login")
+
+    conn = get_conn()
+    if not conn:
+        return redirect("/ventas")
+
+    cur = conn.cursor()
+
+    try:
+        # obtener venta
+        cur.execute("SELECT codigo, cantidad FROM ventas WHERE id = %s", (id,))
+        venta = cur.fetchone()
+
+        if venta:
+            codigo, cantidad = venta
+
+            # devolver stock
+            df = cargar_excel()
+            idx = df[df["CODIGO"] == codigo].index
+
+            if len(idx) > 0:
+                i = idx[0]
+                df.at[i, "STOCK"] = int(df.at[i, "STOCK"]) + int(cantidad)
+                guardar_excel(df)
+
+            # eliminar venta
+            cur.execute("DELETE FROM ventas WHERE id = %s", (id,))
+            conn.commit()
+
+    except:
+        pass
+
+    cur.close()
+    conn.close()
+
+    return redirect("/ventas")
+
+
+# =============================
 # CARRITO
 # =============================
 @app.route("/agregar", methods=["POST"])
@@ -248,12 +291,7 @@ def agregar():
 
     item = fila.iloc[0]
 
-    try:
-        stock_actual = int(item["STOCK"])
-    except:
-        return redirect("/")
-
-    if stock_actual < cantidad:
+    if int(item["STOCK"]) < cantidad:
         return redirect("/")
 
     carrito.append({
@@ -303,8 +341,7 @@ def finalizar(metodo):
 
         if len(idx) > 0:
             pos = idx[0]
-            nuevo_stock = int(df.at[pos, "STOCK"]) - i["cantidad"]
-            df.at[pos, "STOCK"] = max(0, nuevo_stock)
+            df.at[pos, "STOCK"] = max(0, int(df.at[pos, "STOCK"]) - i["cantidad"])
 
         if conn:
             cur = conn.cursor()
@@ -340,7 +377,7 @@ def ventas():
     conn = get_conn()
 
     if not conn:
-        return "❌ No hay base de datos conectada"
+        return "❌ No hay base de datos"
 
     df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
     conn.close()
@@ -361,6 +398,5 @@ def ventas():
 init_db()
 
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
