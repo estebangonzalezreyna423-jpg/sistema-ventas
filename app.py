@@ -109,7 +109,7 @@ def logout():
 
 
 # =============================
-# INDEX
+# INDEX (CON FILTROS + TABLA)
 # =============================
 @app.route("/")
 def index():
@@ -117,15 +117,33 @@ def index():
         return redirect("/login")
 
     df = cargar_excel()
+
+    # 🔥 FILTROS
+    editorial = request.args.get("editorial")
+    categoria = request.args.get("categoria")
+
+    if editorial:
+        df = df[df["EDITORIAL"] == editorial]
+
+    if categoria:
+        df = df[df["CATEGORIA"] == categoria]
+
+    editoriales = sorted(cargar_excel()["EDITORIAL"].dropna().unique())
+    categorias = sorted(cargar_excel()["CATEGORIA"].dropna().unique())
+
     carrito = session.get("carrito", [])
     total = sum(i["subtotal"] for i in carrito)
 
     return render_template(
         "index.html",
-        tabla=df.to_html(index=False, classes="tabla"),  # 👈 ESTO FALTABA
+        tabla=df.to_html(index=False, classes="tabla"),
         carrito=carrito,
         total=total,
-        usuario=session.get("user")
+        usuario=session.get("user"),
+        editoriales=editoriales,
+        categorias=categorias,
+        editorial_actual=editorial,
+        categoria_actual=categoria
     )
 
 
@@ -183,50 +201,6 @@ def agregar_libro():
 
 
 # =============================
-# EDITAR STOCK / PRECIO
-# =============================
-@app.route("/inventario/editar", methods=["POST"])
-def editar_inventario():
-    if login_requerido() or session.get("user") != "PC1":
-        return redirect("/inventario")
-
-    df = cargar_excel()
-    codigo = limpiar(request.form.get("codigo"))
-
-    idx = df[df["CODIGO"].astype(str).str.upper() == codigo].index
-
-    if len(idx) > 0:
-        i = idx[0]
-
-        if request.form.get("stock"):
-            df.at[i, "STOCK"] = int(request.form.get("stock"))
-
-        if request.form.get("precio"):
-            df.at[i, "PRECIO"] = float(request.form.get("precio"))
-
-        guardar_excel(df)
-
-    return redirect("/inventario")
-
-
-# =============================
-# ELIMINAR LIBRO
-# =============================
-@app.route("/inventario/eliminar", methods=["POST"])
-def eliminar_libro():
-    if login_requerido() or session.get("user") != "PC1":
-        return redirect("/inventario")
-
-    df = cargar_excel()
-    codigo = limpiar(request.form.get("codigo"))
-
-    df = df[df["CODIGO"].astype(str).str.upper() != codigo]
-    guardar_excel(df)
-
-    return redirect("/inventario")
-
-
-# =============================
 # 🆕 ELIMINAR VENTA + DEVOLVER STOCK
 # =============================
 @app.route("/ventas/eliminar/<int:id>")
@@ -241,14 +215,12 @@ def eliminar_venta(id):
     cur = conn.cursor()
 
     try:
-        # obtener venta
         cur.execute("SELECT codigo, cantidad FROM ventas WHERE id = %s", (id,))
         venta = cur.fetchone()
 
         if venta:
             codigo, cantidad = venta
 
-            # devolver stock
             df = cargar_excel()
             idx = df[df["CODIGO"] == codigo].index
 
@@ -257,7 +229,6 @@ def eliminar_venta(id):
                 df.at[i, "STOCK"] = int(df.at[i, "STOCK"]) + int(cantidad)
                 guardar_excel(df)
 
-            # eliminar venta
             cur.execute("DELETE FROM ventas WHERE id = %s", (id,))
             conn.commit()
 
@@ -282,7 +253,12 @@ def agregar():
     carrito = session.get("carrito", [])
 
     codigo = limpiar(request.form.get("codigo"))
-    cantidad = int(request.form.get("cantidad"))
+    cantidad = request.form.get("cantidad")
+
+    if not cantidad:
+        return redirect("/")
+
+    cantidad = int(cantidad)
 
     fila = df[df["CODIGO"].astype(str).str.upper() == codigo]
 
@@ -301,20 +277,6 @@ def agregar():
         "cantidad": cantidad,
         "subtotal": float(item["PRECIO"]) * cantidad
     })
-
-    session["carrito"] = carrito
-    return redirect("/")
-
-
-# =============================
-# ELIMINAR CARRITO
-# =============================
-@app.route("/eliminar/<int:index>")
-def eliminar(index):
-    carrito = session.get("carrito", [])
-
-    if 0 <= index < len(carrito):
-        carrito.pop(index)
 
     session["carrito"] = carrito
     return redirect("/")
@@ -382,9 +344,7 @@ def ventas():
     df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
     conn.close()
 
-    # 🔥 asegurar nombres correctos
     df.columns = df.columns.str.lower()
-
     ventas = df.to_dict(orient="records")
 
     return render_template(
