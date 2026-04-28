@@ -208,7 +208,7 @@ tr:nth-child(even) {
     </div>
 
     <form action="/agregar" method="post">
-        <input type="text" name="codigo" placeholder="Código del producto" required>
+        <input type="text" name="codigo" placeholder="Código o nombre" required>
         <input type="number" name="cantidad" min="1" required>
         <button class="btn-agregar">Agregar al carrito</button>
     </form>
@@ -230,11 +230,11 @@ tr:nth-child(even) {
 
         {% for item in carrito %}
         <tr>
-            <td>{{ item.codigo }}</td>
-            <td>{{ item.nombre }}</td>
-            <td>S/ {{ item.precio }}</td>
-            <td>{{ item.cantidad }}</td>
-            <td>S/ {{ item.subtotal }}</td>
+            <td>{{ item["codigo"] }}</td>
+            <td>{{ item["nombre"] }}</td>
+            <td>S/ {{ item["precio"] }}</td>
+            <td>{{ item["cantidad"] }}</td>
+            <td>S/ {{ item["subtotal"] }}</td>
             <td>
                 <a href="/eliminar/{{ loop.index0 }}" class="btn-eliminar">X</a>
             </td>
@@ -252,7 +252,7 @@ tr:nth-child(even) {
 
 </div>
 
-<!-- 🔥 INVENTARIO ABAJO (ESTO ERA LO QUE FALTABA) -->
+<!-- INVENTARIO ABAJO -->
 <div class="card inventario">
     <h2>Inventario</h2>
 
