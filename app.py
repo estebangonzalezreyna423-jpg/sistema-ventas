@@ -56,29 +56,16 @@ def init_db():
 # =============================
 def cargar_excel():
     if not os.path.exists(ARCHIVO):
-        return pd.DataFrame()
+        return pd.DataFrame(columns=["CODIGO", "NOMBRE", "PRECIO", "STOCK", "EDITORIAL", "CATEGORIA"])
 
-    try:
-        for i in range(5):
-            df = pd.read_excel(ARCHIVO, header=i)
-            df.columns = df.columns.astype(str).str.strip().str.upper()
-            if "CODIGO" in df.columns:
-                return df
-        return pd.DataFrame()
-    except:
-        return pd.DataFrame()
+    df = pd.read_excel(ARCHIVO)
+    df.columns = df.columns.astype(str).str.strip().str.upper()
+
+    return df
 
 
 def guardar_excel(df):
     df.to_excel(ARCHIVO, index=False)
-
-
-def buscar_columna(df, palabras):
-    for col in df.columns:
-        for p in palabras:
-            if p in col:
-                return col
-    return None
 
 
 def limpiar(valor):
@@ -122,23 +109,6 @@ def index():
         return redirect("/login")
 
     df = cargar_excel()
-    if df.empty:
-        return "❌ No hay inventario"
-
-    col_editorial = buscar_columna(df, ["EDITORIAL"])
-    col_categoria = buscar_columna(df, ["CATEGORIA"])
-
-    editoriales = sorted(df[col_editorial].dropna().astype(str).unique()) if col_editorial else []
-    categorias = sorted(df[col_categoria].dropna().astype(str).unique()) if col_categoria else []
-
-    editorial = limpiar(request.args.get("editorial"))
-    categoria = limpiar(request.args.get("categoria"))
-
-    if editorial and col_editorial:
-        df = df[df[col_editorial].astype(str).str.upper() == editorial]
-
-    if categoria and col_categoria:
-        df = df[df[col_categoria].astype(str).str.upper() == categoria]
 
     carrito = session.get("carrito", [])
     total = sum(i["subtotal"] for i in carrito)
@@ -148,16 +118,12 @@ def index():
         tabla=df.to_html(index=False, classes="tabla"),
         carrito=carrito,
         total=total,
-        usuario=session.get("user"),
-        editoriales=editoriales,
-        categorias=categorias,
-        editorial_actual=editorial,
-        categoria_actual=categoria
+        usuario=session.get("user")
     )
 
 
 # =============================
-# INVENTARIO (VER)
+# INVENTARIO
 # =============================
 @app.route("/inventario")
 def inventario():
@@ -177,7 +143,7 @@ def inventario():
 
 
 # =============================
-# INVENTARIO - AGREGAR
+# AGREGAR PRODUCTO
 # =============================
 @app.route("/inventario/agregar", methods=["POST"])
 def agregar_producto():
@@ -189,8 +155,8 @@ def agregar_producto():
     nuevo = {
         "CODIGO": limpiar(request.form.get("codigo")),
         "NOMBRE": request.form.get("nombre"),
-        "PRECIO": float(request.form.get("precio")),
-        "STOCK": int(request.form.get("stock")),
+        "PRECIO": float(request.form.get("precio") or 0),
+        "STOCK": int(request.form.get("stock") or 0),
         "EDITORIAL": request.form.get("editorial"),
         "CATEGORIA": request.form.get("categoria")
     }
@@ -202,7 +168,7 @@ def agregar_producto():
 
 
 # =============================
-# INVENTARIO - ACTUALIZAR
+# ACTUALIZAR PRODUCTO (🔥 FIX)
 # =============================
 @app.route("/inventario/actualizar", methods=["POST"])
 def actualizar_producto():
@@ -212,7 +178,6 @@ def actualizar_producto():
     df = cargar_excel()
 
     codigo = limpiar(request.form.get("codigo"))
-
     idx = df[df["CODIGO"].astype(str).str.upper() == codigo].index
 
     if len(idx) > 0:
@@ -230,7 +195,24 @@ def actualizar_producto():
 
 
 # =============================
-# ELIMINAR VENTA (🔥 FIX)
+# ELIMINAR PRODUCTO (🔥 NUEVO)
+# =============================
+@app.route("/inventario/eliminar/<codigo>")
+def eliminar_producto(codigo):
+    if session.get("user") != "PC1":
+        return redirect("/")
+
+    df = cargar_excel()
+    codigo = limpiar(codigo)
+
+    df = df[df["CODIGO"].astype(str).str.upper() != codigo]
+
+    guardar_excel(df)
+    return redirect("/inventario")
+
+
+# =============================
+# ELIMINAR VENTA
 # =============================
 @app.route("/ventas/eliminar/<int:id>")
 def eliminar_venta(id):
@@ -239,7 +221,6 @@ def eliminar_venta(id):
         return redirect("/ventas")
 
     cur = conn.cursor()
-
     cur.execute("DELETE FROM ventas WHERE id = %s", (id,))
     conn.commit()
 
@@ -250,7 +231,7 @@ def eliminar_venta(id):
 
 
 # =============================
-# AGREGAR AL CARRITO
+# CARRITO
 # =============================
 @app.route("/agregar", methods=["POST"])
 def agregar():
