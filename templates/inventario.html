@@ -29,7 +29,6 @@ header {
     margin-bottom: 20px;
 }
 
-/* BOTONES */
 .btn {
     padding: 10px;
     border: none;
@@ -43,16 +42,15 @@ header {
 .btn-eliminar { background: red; color: white; }
 .btn-toggle { background: #f59e0b; color: white; }
 
-/* INPUTS */
 input {
     padding: 8px;
     width: 100%;
     margin-bottom: 8px;
     border-radius: 6px;
     border: 1px solid #ccc;
+    box-sizing: border-box;
 }
 
-/* TABLA */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -76,7 +74,6 @@ td {
     gap: 10px;
 }
 
-/* OCULTAR */
 .hidden {
     display: none;
 }
@@ -106,9 +103,6 @@ function toggle(id) {
 
 <div class="container">
 
-<!-- ===================== -->
-<!-- BOTONES PRINCIPALES -->
-<!-- ===================== -->
 <div class="card">
 
     {% if usuario == "PC1" %}
@@ -122,32 +116,26 @@ function toggle(id) {
     </button>
 
     {% else %}
-        <p>🔒 Solo PC1 puede modificar inventario</p>
+        <p>Solo PC1 puede modificar inventario</p>
     {% endif %}
 
 </div>
 
-<!-- ===================== -->
-<!-- EDITAR STOCK -->
-<!-- ===================== -->
 <div id="formEditar" class="card hidden">
 
-    <h2>✏️ Editar Stock / Precio</h2>
+    <h2>Editar Stock / Precio</h2>
 
-    <form method="POST" action="/inventario/editar">
+    <form method="POST" action="/inventario/actualizar">
 
         <input type="text" name="codigo" placeholder="Código del libro" required>
         <input type="number" name="stock" placeholder="Nuevo stock">
         <input type="number" name="precio" placeholder="Nuevo precio">
 
-        <button class="btn btn-editar">Actualizar</button>
+        <button type="submit" class="btn btn-editar">Actualizar</button>
     </form>
 
 </div>
 
-<!-- ===================== -->
-<!-- AGREGAR / ELIMINAR -->
-<!-- ===================== -->
 <div id="formAgregar" class="card hidden">
 
     <h2>Agregar Libro</h2>
@@ -165,26 +153,25 @@ function toggle(id) {
             <input type="text" name="editorial" placeholder="Editorial">
         </div>
 
-        <button class="btn btn-agregar">Agregar Libro</button>
+        <button type="submit" class="btn btn-agregar">Agregar Libro</button>
     </form>
 
     <hr>
 
-    <h3> Eliminar Libro</h3>
+    <h3>Eliminar Libro</h3>
 
     <form method="POST" action="/inventario/eliminar">
         <input type="text" name="codigo" placeholder="Código del libro" required>
-        <button class="btn btn-eliminar">Eliminar Libro</button>
+        <button type="submit" class="btn btn-eliminar">Eliminar Libro</button>
     </form>
 
 </div>
 
-<!-- ===================== -->
-<!-- LISTA -->
-<!-- ===================== -->
 <div class="card">
-    <h2> Lista de productos</h2>
-    {{ tabla|safe }}
+    <h2>Lista de productos</h2>
+    <div style="overflow-x:auto;">
+        {{ tabla|safe }}
+    </div>
 </div>
 
 </div>

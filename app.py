@@ -115,7 +115,6 @@ def opciones_filtros(df):
 
         if codigo:
             sugerencias.append(codigo)
-
         if nombre:
             sugerencias.append(nombre)
 
@@ -218,8 +217,8 @@ def agregar_producto():
         ventas = int(request.form.get("ventas") or 0)
         stock = int(request.form.get("stock") or (compras - ventas))
 
-        costo = float(request.form.get("costo") or request.form.get("costo_unitario") or 0)
-        precio = float(request.form.get("precio") or request.form.get("precio_venta") or 0)
+        costo = float(request.form.get("costo") or request.form.get("costo_unitario") or request.form.get("precio") or 0)
+        precio = float(request.form.get("precio_venta") or request.form.get("precio") or 0)
 
         nuevo = {
             "CODIGO": codigo,
@@ -244,6 +243,7 @@ def agregar_producto():
     return redirect("/inventario")
 
 
+@app.route("/inventario/editar", methods=["POST"])
 @app.route("/inventario/actualizar", methods=["POST"])
 @app.route("/inventario/stock", methods=["POST"])
 @app.route("/inventario/actualizar_stock", methods=["POST"])
@@ -266,25 +266,15 @@ def actualizar_producto():
         i = idx[0]
 
         try:
-            stock_actual = int(df.at[i, "STOCK"] or 0)
+            if request.form.get("stock") not in [None, ""]:
+                df.at[i, "STOCK"] = int(request.form.get("stock"))
 
-            cantidad_form = (
-                request.form.get("cantidad") or
-                request.form.get("agregar_stock") or
-                request.form.get("sumar_stock")
-            )
+            if request.form.get("nuevo_stock") not in [None, ""]:
+                df.at[i, "STOCK"] = int(request.form.get("nuevo_stock"))
 
-            stock_form = (
-                request.form.get("stock") or
-                request.form.get("nuevo_stock")
-            )
-
-            if cantidad_form not in [None, ""]:
-                cantidad = int(cantidad_form)
-                df.at[i, "STOCK"] = stock_actual + cantidad
-
-            elif stock_form not in [None, ""]:
-                df.at[i, "STOCK"] = int(stock_form)
+            if request.form.get("cantidad") not in [None, ""]:
+                stock_actual = int(df.at[i, "STOCK"] or 0)
+                df.at[i, "STOCK"] = stock_actual + int(request.form.get("cantidad"))
 
             if request.form.get("nombre"):
                 df.at[i, "NOMBRE DEL PRODUCTO"] = request.form.get("nombre")
@@ -301,23 +291,29 @@ def actualizar_producto():
             if request.form.get("ventas") not in [None, ""]:
                 df.at[i, "VENTAS"] = int(request.form.get("ventas"))
 
-            if request.form.get("costo") or request.form.get("costo_unitario"):
-                df.at[i, "COSTO UNITARIO"] = float(request.form.get("costo") or request.form.get("costo_unitario"))
+            if request.form.get("costo") not in [None, ""]:
+                df.at[i, "COSTO UNITARIO"] = float(request.form.get("costo"))
 
-            if request.form.get("precio") or request.form.get("precio_venta"):
-                df.at[i, "PRECIO DE VENTA"] = float(request.form.get("precio") or request.form.get("precio_venta"))
+            if request.form.get("costo_unitario") not in [None, ""]:
+                df.at[i, "COSTO UNITARIO"] = float(request.form.get("costo_unitario"))
+
+            if request.form.get("precio") not in [None, ""]:
+                df.at[i, "COSTO UNITARIO"] = float(request.form.get("precio"))
+
+            if request.form.get("precio_venta") not in [None, ""]:
+                df.at[i, "PRECIO DE VENTA"] = float(request.form.get("precio_venta"))
 
             costo = float(df.at[i, "COSTO UNITARIO"] or 0)
-            precio = float(df.at[i, "PRECIO DE VENTA"] or 0)
+            precio_venta = float(df.at[i, "PRECIO DE VENTA"] or 0)
             stock = int(df.at[i, "STOCK"] or 0)
 
-            df.at[i, "UTILIDAD PROD"] = precio - costo
+            df.at[i, "UTILIDAD PROD"] = precio_venta - costo
             df.at[i, "VALOR DEL INVENTARIO"] = stock * costo
 
             guardar_excel(df)
 
         except Exception as e:
-            print("ERROR ACTUALIZANDO STOCK:", e)
+            print("ERROR ACTUALIZANDO INVENTARIO:", e)
 
     return redirect("/inventario")
 
