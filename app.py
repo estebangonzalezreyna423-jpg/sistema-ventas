@@ -212,7 +212,6 @@ def agregar():
         return redirect("/")
 
     item = fila.iloc[0]
-
     precio = float(item["COSTO UNITARIO"] or 0)
 
     carrito.append({
@@ -247,7 +246,17 @@ def finalizar(metodo):
 
         if len(idx) > 0:
             i = idx[0]
-            df.at[i, "STOCK"] = max(0, int(df.at[i, "STOCK"]) - item["cantidad"])
+
+            stock_actual = int(df.at[i, "STOCK"] or 0)
+            ventas_actuales = int(df.at[i, "VENTAS"] or 0)
+            costo = float(df.at[i, "COSTO UNITARIO"] or 0)
+
+            nuevo_stock = max(0, stock_actual - item["cantidad"])
+            nuevas_ventas = ventas_actuales + item["cantidad"]
+
+            df.at[i, "STOCK"] = nuevo_stock
+            df.at[i, "VENTAS"] = nuevas_ventas
+            df.at[i, "VALOR DEL INVENTARIO"] = nuevo_stock * costo
 
         if cur:
             cur.execute("""
@@ -275,7 +284,7 @@ def finalizar(metodo):
 
 
 # =============================
-# VENTAS (🔥 FIX TOTAL)
+# VENTAS
 # =============================
 @app.route("/ventas")
 def ventas():
@@ -305,11 +314,11 @@ def ventas():
         total_yape = 0
     else:
         df["subtotal"] = pd.to_numeric(df["subtotal"], errors="coerce").fillna(0)
+        df["metodo"] = df["metodo"].astype(str).str.upper()
 
         total = df["subtotal"].sum()
-
-        total_efectivo = df[df["metodo"].str.upper() == "EFECTIVO"]["subtotal"].sum()
-        total_yape = df[df["metodo"].str.upper() == "YAPE"]["subtotal"].sum()
+        total_efectivo = df[df["metodo"] == "EFECTIVO"]["subtotal"].sum()
+        total_yape = df[df["metodo"] == "YAPE"]["subtotal"].sum()
 
     return render_template(
         "ventas.html",
@@ -322,7 +331,7 @@ def ventas():
 
 
 # =============================
-# ELIMINAR VENTA
+# ELIMINAR VENTA + DEVOLVER STOCK
 # =============================
 @app.route("/ventas/eliminar/<int:id>")
 def eliminar_venta(id):
@@ -336,8 +345,36 @@ def eliminar_venta(id):
 
     if conn:
         cur = conn.cursor()
-        cur.execute("DELETE FROM ventas WHERE id = %s", (id,))
-        conn.commit()
+
+        cur.execute("SELECT codigo, cantidad FROM ventas WHERE id = %s", (id,))
+        venta = cur.fetchone()
+
+        if venta:
+            codigo_venta = limpiar(venta[0])
+            cantidad_venta = int(venta[1])
+
+            df = cargar_excel()
+            idx = df[df["CODIGO"].astype(str).str.upper() == codigo_venta].index
+
+            if len(idx) > 0:
+                i = idx[0]
+
+                stock_actual = int(df.at[i, "STOCK"] or 0)
+                ventas_actuales = int(df.at[i, "VENTAS"] or 0)
+                costo = float(df.at[i, "COSTO UNITARIO"] or 0)
+
+                nuevo_stock = stock_actual + cantidad_venta
+                nuevas_ventas = max(0, ventas_actuales - cantidad_venta)
+
+                df.at[i, "STOCK"] = nuevo_stock
+                df.at[i, "VENTAS"] = nuevas_ventas
+                df.at[i, "VALOR DEL INVENTARIO"] = nuevo_stock * costo
+
+                guardar_excel(df)
+
+            cur.execute("DELETE FROM ventas WHERE id = %s", (id,))
+            conn.commit()
+
         cur.close()
         conn.close()
 
