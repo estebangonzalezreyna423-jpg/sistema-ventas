@@ -120,7 +120,6 @@ def opciones_filtros(df):
             sugerencias.append(nombre)
 
     sugerencias = sorted(list(set(sugerencias)))
-
     return editoriales, categorias, sugerencias
 
 
@@ -239,8 +238,8 @@ def agregar_producto():
         df = pd.concat([df, pd.DataFrame([nuevo])], ignore_index=True)
         guardar_excel(df)
 
-    except:
-        pass
+    except Exception as e:
+        print("ERROR AGREGANDO PRODUCTO:", e)
 
     return redirect("/inventario")
 
@@ -267,6 +266,26 @@ def actualizar_producto():
         i = idx[0]
 
         try:
+            stock_actual = int(df.at[i, "STOCK"] or 0)
+
+            cantidad_form = (
+                request.form.get("cantidad") or
+                request.form.get("agregar_stock") or
+                request.form.get("sumar_stock")
+            )
+
+            stock_form = (
+                request.form.get("stock") or
+                request.form.get("nuevo_stock")
+            )
+
+            if cantidad_form not in [None, ""]:
+                cantidad = int(cantidad_form)
+                df.at[i, "STOCK"] = stock_actual + cantidad
+
+            elif stock_form not in [None, ""]:
+                df.at[i, "STOCK"] = int(stock_form)
+
             if request.form.get("nombre"):
                 df.at[i, "NOMBRE DEL PRODUCTO"] = request.form.get("nombre")
 
@@ -281,15 +300,6 @@ def actualizar_producto():
 
             if request.form.get("ventas") not in [None, ""]:
                 df.at[i, "VENTAS"] = int(request.form.get("ventas"))
-
-            stock_form = (
-                request.form.get("stock") or
-                request.form.get("nuevo_stock") or
-                request.form.get("cantidad")
-            )
-
-            if stock_form not in [None, ""]:
-                df.at[i, "STOCK"] = int(stock_form)
 
             if request.form.get("costo") or request.form.get("costo_unitario"):
                 df.at[i, "COSTO UNITARIO"] = float(request.form.get("costo") or request.form.get("costo_unitario"))
@@ -306,8 +316,8 @@ def actualizar_producto():
 
             guardar_excel(df)
 
-        except:
-            pass
+        except Exception as e:
+            print("ERROR ACTUALIZANDO STOCK:", e)
 
     return redirect("/inventario")
 
