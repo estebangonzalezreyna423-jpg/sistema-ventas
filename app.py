@@ -246,6 +246,8 @@ def agregar_producto():
 
 
 @app.route("/inventario/actualizar", methods=["POST"])
+@app.route("/inventario/stock", methods=["POST"])
+@app.route("/inventario/actualizar_stock", methods=["POST"])
 def actualizar_producto():
     if login_requerido():
         return redirect("/login")
@@ -280,8 +282,14 @@ def actualizar_producto():
             if request.form.get("ventas") not in [None, ""]:
                 df.at[i, "VENTAS"] = int(request.form.get("ventas"))
 
-            if request.form.get("stock") not in [None, ""]:
-                df.at[i, "STOCK"] = int(request.form.get("stock"))
+            stock_form = (
+                request.form.get("stock") or
+                request.form.get("nuevo_stock") or
+                request.form.get("cantidad")
+            )
+
+            if stock_form not in [None, ""]:
+                df.at[i, "STOCK"] = int(stock_form)
 
             if request.form.get("costo") or request.form.get("costo_unitario"):
                 df.at[i, "COSTO UNITARIO"] = float(request.form.get("costo") or request.form.get("costo_unitario"))
