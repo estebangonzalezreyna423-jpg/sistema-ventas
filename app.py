@@ -245,6 +245,65 @@ def agregar_producto():
     return redirect("/inventario")
 
 
+@app.route("/inventario/actualizar", methods=["POST"])
+def actualizar_producto():
+    if login_requerido():
+        return redirect("/login")
+
+    if session.get("user") != "PC1":
+        return redirect("/")
+
+    df = cargar_excel()
+    codigo = limpiar(request.form.get("codigo"))
+
+    if not codigo:
+        return redirect("/inventario")
+
+    idx = df[df["CODIGO"].astype(str).str.upper() == codigo].index
+
+    if len(idx) > 0:
+        i = idx[0]
+
+        try:
+            if request.form.get("nombre"):
+                df.at[i, "NOMBRE DEL PRODUCTO"] = request.form.get("nombre")
+
+            if request.form.get("editorial"):
+                df.at[i, "EDITORIAL"] = request.form.get("editorial")
+
+            if request.form.get("categoria"):
+                df.at[i, "CATEGORIA"] = request.form.get("categoria")
+
+            if request.form.get("compras") not in [None, ""]:
+                df.at[i, "COMPRAS"] = int(request.form.get("compras"))
+
+            if request.form.get("ventas") not in [None, ""]:
+                df.at[i, "VENTAS"] = int(request.form.get("ventas"))
+
+            if request.form.get("stock") not in [None, ""]:
+                df.at[i, "STOCK"] = int(request.form.get("stock"))
+
+            if request.form.get("costo") or request.form.get("costo_unitario"):
+                df.at[i, "COSTO UNITARIO"] = float(request.form.get("costo") or request.form.get("costo_unitario"))
+
+            if request.form.get("precio") or request.form.get("precio_venta"):
+                df.at[i, "PRECIO DE VENTA"] = float(request.form.get("precio") or request.form.get("precio_venta"))
+
+            costo = float(df.at[i, "COSTO UNITARIO"] or 0)
+            precio = float(df.at[i, "PRECIO DE VENTA"] or 0)
+            stock = int(df.at[i, "STOCK"] or 0)
+
+            df.at[i, "UTILIDAD PROD"] = precio - costo
+            df.at[i, "VALOR DEL INVENTARIO"] = stock * costo
+
+            guardar_excel(df)
+
+        except:
+            pass
+
+    return redirect("/inventario")
+
+
 @app.route("/inventario/eliminar", methods=["POST"])
 def eliminar_producto():
     if login_requerido():
