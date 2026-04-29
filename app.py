@@ -275,29 +275,54 @@ def finalizar(metodo):
 
 
 # =============================
-# VENTAS
+# VENTAS (🔥 FIX TOTAL)
 # =============================
 @app.route("/ventas")
 def ventas():
+    if login_requerido():
+        return redirect("/login")
+
     conn = get_conn()
 
     if not conn:
-        return render_template("ventas.html", ventas=[])
+        return render_template(
+            "ventas.html",
+            ventas=[],
+            total=0,
+            total_efectivo=0,
+            total_yape=0,
+            usuario=session.get("user")
+        )
 
     df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
     conn.close()
 
     df.columns = df.columns.str.lower()
 
+    if df.empty:
+        total = 0
+        total_efectivo = 0
+        total_yape = 0
+    else:
+        df["subtotal"] = pd.to_numeric(df["subtotal"], errors="coerce").fillna(0)
+
+        total = df["subtotal"].sum()
+
+        total_efectivo = df[df["metodo"].str.upper() == "EFECTIVO"]["subtotal"].sum()
+        total_yape = df[df["metodo"].str.upper() == "YAPE"]["subtotal"].sum()
+
     return render_template(
         "ventas.html",
         ventas=df.to_dict(orient="records"),
+        total=round(total, 2),
+        total_efectivo=round(total_efectivo, 2),
+        total_yape=round(total_yape, 2),
         usuario=session.get("user")
     )
 
 
 # =============================
-# 🔥 ELIMINAR VENTA (ARREGLADO)
+# ELIMINAR VENTA
 # =============================
 @app.route("/ventas/eliminar/<int:id>")
 def eliminar_venta(id):
