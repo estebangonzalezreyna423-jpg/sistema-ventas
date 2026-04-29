@@ -16,9 +16,6 @@ USUARIOS = {
     "PC3": "123"
 }
 
-# =============================
-# DB
-# =============================
 def get_conn():
     if not DATABASE_URL:
         return None
@@ -51,11 +48,28 @@ def init_db():
     conn.close()
 
 
-# =============================
-# UTILIDADES (FIX REAL)
-# =============================
+def limpiar(valor):
+    return str(valor).strip().upper() if valor else ""
+
+
+def login_requerido():
+    return "user" not in session
+
+
 def cargar_excel():
-    columnas = ["CODIGO","NOMBRE","PRECIO","STOCK","EDITORIAL","CATEGORIA"]
+    columnas = [
+        "CODIGO",
+        "NOMBRE DEL PRODUCTO",
+        "EDITORIAL",
+        "CATEGORIA",
+        "COMPRAS",
+        "VENTAS",
+        "STOCK",
+        "COSTO UNITARIO",
+        "PRECIO DE VENTA",
+        "UTILIDAD PROD",
+        "VALOR DEL INVENTARIO"
+    ]
 
     if not os.path.exists(ARCHIVO):
         df = pd.DataFrame(columns=columnas)
@@ -63,14 +77,13 @@ def cargar_excel():
         return df
 
     df = pd.read_excel(ARCHIVO)
+    df.columns = df.columns.astype(str).str.strip().str.upper()
 
-    # normalizar columnas
-    df.columns = [c.strip().upper() for c in df.columns]
+    for col in columnas:
+        if col not in df.columns:
+            df[col] = ""
 
-    # asegurar estructura fija (evita duplicados)
-    df = df.reindex(columns=columnas)
-
-    # limpiar vacíos (NaN → "")
+    df = df[columnas]
     df = df.fillna("")
 
     return df
@@ -80,17 +93,6 @@ def guardar_excel(df):
     df.to_excel(ARCHIVO, index=False)
 
 
-def limpiar(valor):
-    return str(valor).strip().upper() if valor else ""
-
-
-def login_requerido():
-    return "user" not in session
-
-
-# =============================
-# LOGIN
-# =============================
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -101,6 +103,7 @@ def login():
             session["user"] = user
             session["carrito"] = []
             return redirect("/")
+
         return render_template("login.html", error="Credenciales incorrectas")
 
     return render_template("login.html")
@@ -112,9 +115,6 @@ def logout():
     return redirect("/login")
 
 
-# =============================
-# INDEX
-# =============================
 @app.route("/")
 def index():
     if login_requerido():
@@ -133,9 +133,6 @@ def index():
     )
 
 
-# =============================
-# INVENTARIO
-# =============================
 @app.route("/inventario")
 def inventario():
     if login_requerido():
@@ -153,9 +150,6 @@ def inventario():
     )
 
 
-# =============================
-# AGREGAR (FIX)
-# =============================
 @app.route("/inventario/agregar", methods=["POST"])
 def agregar_producto():
     if session.get("user") != "PC1":
@@ -166,18 +160,32 @@ def agregar_producto():
     codigo = limpiar(request.form.get("codigo"))
     nombre = request.form.get("nombre")
 
-    # evita filas vacías
     if not codigo or not nombre:
         return redirect("/inventario")
 
     try:
+        compras = int(request.form.get("compras") or 0)
+        ventas = int(request.form.get("ventas") or 0)
+        stock = int(request.form.get("stock") or (compras - ventas))
+
+        costo = float(request.form.get("costo") or request.form.get("costo_unitario") or 0)
+        precio = float(request.form.get("precio") or request.form.get("precio_venta") or 0)
+
+        utilidad = precio - costo
+        valor_inventario = stock * costo
+
         nuevo = {
             "CODIGO": codigo,
-            "NOMBRE": nombre,
-            "PRECIO": float(request.form.get("precio") or 0),
-            "STOCK": int(request.form.get("stock") or 0),
+            "NOMBRE DEL PRODUCTO": nombre,
             "EDITORIAL": request.form.get("editorial") or "",
-            "CATEGORIA": request.form.get("categoria") or ""
+            "CATEGORIA": request.form.get("categoria") or "",
+            "COMPRAS": compras,
+            "VENTAS": ventas,
+            "STOCK": stock,
+            "COSTO UNITARIO": costo,
+            "PRECIO DE VENTA": precio,
+            "UTILIDAD PROD": utilidad,
+            "VALOR DEL INVENTARIO": valor_inventario
         }
 
         df = pd.concat([df, pd.DataFrame([nuevo])], ignore_index=True)
@@ -189,9 +197,6 @@ def agregar_producto():
     return redirect("/inventario")
 
 
-# =============================
-# ACTUALIZAR
-# =============================
 @app.route("/inventario/actualizar", methods=["POST"])
 def actualizar_producto():
     if session.get("user") != "PC1":
@@ -205,20 +210,46 @@ def actualizar_producto():
     if len(idx) > 0:
         i = idx[0]
 
-        if request.form.get("precio"):
-            df.at[i, "PRECIO"] = float(request.form.get("precio"))
+        try:
+            if request.form.get("nombre"):
+                df.at[i, "NOMBRE DEL PRODUCTO"] = request.form.get("nombre")
 
-        if request.form.get("stock"):
-            df.at[i, "STOCK"] = int(request.form.get("stock"))
+            if request.form.get("editorial"):
+                df.at[i, "EDITORIAL"] = request.form.get("editorial")
 
-        guardar_excel(df)
+            if request.form.get("categoria"):
+                df.at[i, "CATEGORIA"] = request.form.get("categoria")
+
+            if request.form.get("compras"):
+                df.at[i, "COMPRAS"] = int(request.form.get("compras"))
+
+            if request.form.get("ventas"):
+                df.at[i, "VENTAS"] = int(request.form.get("ventas"))
+
+            if request.form.get("stock"):
+                df.at[i, "STOCK"] = int(request.form.get("stock"))
+
+            if request.form.get("costo") or request.form.get("costo_unitario"):
+                df.at[i, "COSTO UNITARIO"] = float(request.form.get("costo") or request.form.get("costo_unitario"))
+
+            if request.form.get("precio") or request.form.get("precio_venta"):
+                df.at[i, "PRECIO DE VENTA"] = float(request.form.get("precio") or request.form.get("precio_venta"))
+
+            costo = float(df.at[i, "COSTO UNITARIO"] or 0)
+            precio = float(df.at[i, "PRECIO DE VENTA"] or 0)
+            stock = int(df.at[i, "STOCK"] or 0)
+
+            df.at[i, "UTILIDAD PROD"] = precio - costo
+            df.at[i, "VALOR DEL INVENTARIO"] = stock * costo
+
+            guardar_excel(df)
+
+        except:
+            pass
 
     return redirect("/inventario")
 
 
-# =============================
-# ELIMINAR
-# =============================
 @app.route("/inventario/eliminar", methods=["POST"])
 def eliminar_producto():
     if session.get("user") != "PC1":
@@ -228,15 +259,11 @@ def eliminar_producto():
     codigo = limpiar(request.form.get("codigo"))
 
     df = df[df["CODIGO"].astype(str).str.upper() != codigo]
-
     guardar_excel(df)
 
     return redirect("/inventario")
 
 
-# =============================
-# CARRITO
-# =============================
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
     carrito = session.get("carrito", [])
@@ -266,11 +293,11 @@ def agregar():
 
     item = fila.iloc[0]
 
-    precio = float(item["PRECIO"]) if item["PRECIO"] else 0
+    precio = float(item["PRECIO DE VENTA"] or 0)
 
     carrito.append({
         "codigo": item["CODIGO"],
-        "nombre": item["NOMBRE"],
+        "nombre": item["NOMBRE DEL PRODUCTO"],
         "precio": precio,
         "cantidad": cantidad,
         "subtotal": precio * cantidad
@@ -280,9 +307,6 @@ def agregar():
     return redirect("/")
 
 
-# =============================
-# FINALIZAR
-# =============================
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
     carrito = session.get("carrito", [])
@@ -300,7 +324,16 @@ def finalizar(metodo):
 
         if len(idx) > 0:
             i = idx[0]
-            df.at[i, "STOCK"] = max(0, int(df.at[i, "STOCK"]) - item["cantidad"])
+
+            stock_actual = int(df.at[i, "STOCK"] or 0)
+            ventas_actuales = int(df.at[i, "VENTAS"] or 0)
+            costo = float(df.at[i, "COSTO UNITARIO"] or 0)
+
+            nuevo_stock = max(0, stock_actual - item["cantidad"])
+
+            df.at[i, "STOCK"] = nuevo_stock
+            df.at[i, "VENTAS"] = ventas_actuales + item["cantidad"]
+            df.at[i, "VALOR DEL INVENTARIO"] = nuevo_stock * costo
 
         if cur:
             cur.execute("""
@@ -327,9 +360,6 @@ def finalizar(metodo):
     return redirect("/")
 
 
-# =============================
-# VENTAS
-# =============================
 @app.route("/ventas")
 def ventas():
     conn = get_conn()
@@ -349,9 +379,6 @@ def ventas():
     )
 
 
-# =============================
-# INIT
-# =============================
 init_db()
 
 if __name__ == "__main__":
