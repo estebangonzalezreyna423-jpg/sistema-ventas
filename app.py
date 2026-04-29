@@ -100,24 +100,49 @@ def guardar_excel(df):
 
 
 def aplicar_filtros(df):
-    editorial = request.args.get("editorial", "")
-    categoria = request.args.get("categoria", "")
+    editoriales = request.args.getlist("editorial")
+    categorias = request.args.getlist("categoria")
     buscar = request.args.get("buscar", "")
 
-    if editorial:
-        df = df[df["EDITORIAL"].astype(str).str.upper() == editorial.upper()]
+    editoriales = [e.upper() for e in editoriales if e.strip()]
+    categorias = [c.upper() for c in categorias if c.strip()]
 
-    if categoria:
-        df = df[df["CATEGORIA"].astype(str).str.upper() == categoria.upper()]
+    if editoriales:
+        df = df[df["EDITORIAL"].astype(str).str.upper().isin(editoriales)]
+
+    if categorias:
+        df = df[df["CATEGORIA"].astype(str).str.upper().isin(categorias)]
 
     if buscar:
         buscar = buscar.upper()
         df = df[
             df["CODIGO"].astype(str).str.upper().str.contains(buscar, na=False) |
-            df["NOMBRE DEL PRODUCTO"].astype(str).str.upper().str.contains(buscar, na=False)
+            df["NOMBRE DEL PRODUCTO"].astype(str).str.upper().str.contains(buscar, na=False) |
+            df["EDITORIAL"].astype(str).str.upper().str.contains(buscar, na=False) |
+            df["CATEGORIA"].astype(str).str.upper().str.contains(buscar, na=False)
         ]
 
     return df
+
+
+def opciones_filtros(df):
+    editoriales = sorted(df["EDITORIAL"].dropna().astype(str).unique())
+    categorias = sorted(df["CATEGORIA"].dropna().astype(str).unique())
+
+    editoriales = [x for x in editoriales if x.strip() != ""]
+    categorias = [x for x in categorias if x.strip() != ""]
+
+    sugerencias = []
+
+    for _, row in df.iterrows():
+        sugerencias.append(str(row["CODIGO"]))
+        sugerencias.append(str(row["NOMBRE DEL PRODUCTO"]))
+        sugerencias.append(str(row["EDITORIAL"]))
+        sugerencias.append(str(row["CATEGORIA"]))
+
+    sugerencias = sorted(list(set([x for x in sugerencias if x.strip() != ""])))
+
+    return editoriales, categorias, sugerencias
 
 
 # =============================
@@ -159,11 +184,7 @@ def index():
     carrito = session.get("carrito", [])
     total = sum(i["subtotal"] for i in carrito)
 
-    editoriales = sorted(df_original["EDITORIAL"].dropna().astype(str).unique())
-    categorias = sorted(df_original["CATEGORIA"].dropna().astype(str).unique())
-
-    editoriales = [x for x in editoriales if x.strip() != ""]
-    categorias = [x for x in categorias if x.strip() != ""]
+    editoriales, categorias, sugerencias = opciones_filtros(df_original)
 
     return render_template(
         "index.html",
@@ -172,7 +193,11 @@ def index():
         total=total,
         usuario=session.get("user"),
         editoriales=editoriales,
-        categorias=categorias
+        categorias=categorias,
+        sugerencias=sugerencias,
+        editoriales_seleccionadas=request.args.getlist("editorial"),
+        categorias_seleccionadas=request.args.getlist("categoria"),
+        buscar_actual=request.args.get("buscar", "")
     )
 
 
@@ -190,18 +215,18 @@ def inventario():
     df_original = cargar_excel()
     df = aplicar_filtros(df_original)
 
-    editoriales = sorted(df_original["EDITORIAL"].dropna().astype(str).unique())
-    categorias = sorted(df_original["CATEGORIA"].dropna().astype(str).unique())
-
-    editoriales = [x for x in editoriales if x.strip() != ""]
-    categorias = [x for x in categorias if x.strip() != ""]
+    editoriales, categorias, sugerencias = opciones_filtros(df_original)
 
     return render_template(
         "inventario.html",
         tabla=df.to_html(index=False, classes="tabla"),
         usuario=session.get("user"),
         editoriales=editoriales,
-        categorias=categorias
+        categorias=categorias,
+        sugerencias=sugerencias,
+        editoriales_seleccionadas=request.args.getlist("editorial"),
+        categorias_seleccionadas=request.args.getlist("categoria"),
+        buscar_actual=request.args.get("buscar", "")
     )
 
 
