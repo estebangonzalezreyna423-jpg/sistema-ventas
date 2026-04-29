@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, send_file
 import pandas as pd
 from datetime import datetime
 import os
@@ -193,6 +193,21 @@ def inventario():
         sugerencias=sugerencias,
         editoriales_seleccionadas=request.args.getlist("editorial"),
         categorias_seleccionadas=request.args.getlist("categoria")
+    )
+
+
+@app.route("/descargar_inventario")
+def descargar_inventario():
+    if login_requerido():
+        return redirect("/login")
+
+    if not os.path.exists(ARCHIVO):
+        cargar_excel()
+
+    return send_file(
+        ARCHIVO,
+        as_attachment=True,
+        download_name="inventario.xlsx"
     )
 
 
