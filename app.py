@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, send_file
 import pandas as pd
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import os
 import psycopg2
 
@@ -54,6 +55,10 @@ def limpiar(valor):
 
 def login_requerido():
     return "user" not in session
+
+
+def hora_peru():
+    return datetime.now(ZoneInfo("America/Lima")).replace(tzinfo=None)
 
 
 def cargar_excel():
@@ -413,7 +418,7 @@ def finalizar(metodo):
     conn = get_conn()
     cur = conn.cursor() if conn else None
 
-    ahora = datetime.now()
+    ahora = hora_peru()
 
     for item in carrito:
         codigo = limpiar(item["codigo"])
