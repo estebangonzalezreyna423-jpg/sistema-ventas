@@ -16,6 +16,9 @@ USUARIOS = {
     "PC3": "123"
 }
 
+# =============================
+# DB
+# =============================
 def get_conn():
     if not DATABASE_URL:
         return None
@@ -48,6 +51,9 @@ def init_db():
     conn.close()
 
 
+# =============================
+# UTILIDADES
+# =============================
 def limpiar(valor):
     return str(valor).strip().upper() if valor else ""
 
@@ -93,6 +99,30 @@ def guardar_excel(df):
     df.to_excel(ARCHIVO, index=False)
 
 
+def aplicar_filtros(df):
+    editorial = request.args.get("editorial", "")
+    categoria = request.args.get("categoria", "")
+    buscar = request.args.get("buscar", "")
+
+    if editorial:
+        df = df[df["EDITORIAL"].astype(str).str.upper() == editorial.upper()]
+
+    if categoria:
+        df = df[df["CATEGORIA"].astype(str).str.upper() == categoria.upper()]
+
+    if buscar:
+        buscar = buscar.upper()
+        df = df[
+            df["CODIGO"].astype(str).str.upper().str.contains(buscar, na=False) |
+            df["NOMBRE DEL PRODUCTO"].astype(str).str.upper().str.contains(buscar, na=False)
+        ]
+
+    return df
+
+
+# =============================
+# LOGIN
+# =============================
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -115,24 +145,40 @@ def logout():
     return redirect("/login")
 
 
+# =============================
+# INDEX
+# =============================
 @app.route("/")
 def index():
     if login_requerido():
         return redirect("/login")
 
-    df = cargar_excel()
+    df_original = cargar_excel()
+    df = aplicar_filtros(df_original)
+
     carrito = session.get("carrito", [])
     total = sum(i["subtotal"] for i in carrito)
+
+    editoriales = sorted(df_original["EDITORIAL"].dropna().astype(str).unique())
+    categorias = sorted(df_original["CATEGORIA"].dropna().astype(str).unique())
+
+    editoriales = [x for x in editoriales if x.strip() != ""]
+    categorias = [x for x in categorias if x.strip() != ""]
 
     return render_template(
         "index.html",
         tabla=df.to_html(index=False, classes="tabla"),
         carrito=carrito,
         total=total,
-        usuario=session.get("user")
+        usuario=session.get("user"),
+        editoriales=editoriales,
+        categorias=categorias
     )
 
 
+# =============================
+# INVENTARIO
+# =============================
 @app.route("/inventario")
 def inventario():
     if login_requerido():
@@ -141,15 +187,27 @@ def inventario():
     if session.get("user") != "PC1":
         return redirect("/")
 
-    df = cargar_excel()
+    df_original = cargar_excel()
+    df = aplicar_filtros(df_original)
+
+    editoriales = sorted(df_original["EDITORIAL"].dropna().astype(str).unique())
+    categorias = sorted(df_original["CATEGORIA"].dropna().astype(str).unique())
+
+    editoriales = [x for x in editoriales if x.strip() != ""]
+    categorias = [x for x in categorias if x.strip() != ""]
 
     return render_template(
         "inventario.html",
         tabla=df.to_html(index=False, classes="tabla"),
-        usuario=session.get("user")
+        usuario=session.get("user"),
+        editoriales=editoriales,
+        categorias=categorias
     )
 
 
+# =============================
+# AGREGAR PRODUCTO
+# =============================
 @app.route("/inventario/agregar", methods=["POST"])
 def agregar_producto():
     if session.get("user") != "PC1":
@@ -197,6 +255,9 @@ def agregar_producto():
     return redirect("/inventario")
 
 
+# =============================
+# ACTUALIZAR PRODUCTO
+# =============================
 @app.route("/inventario/actualizar", methods=["POST"])
 def actualizar_producto():
     if session.get("user") != "PC1":
@@ -250,6 +311,9 @@ def actualizar_producto():
     return redirect("/inventario")
 
 
+# =============================
+# ELIMINAR PRODUCTO
+# =============================
 @app.route("/inventario/eliminar", methods=["POST"])
 def eliminar_producto():
     if session.get("user") != "PC1":
@@ -264,6 +328,9 @@ def eliminar_producto():
     return redirect("/inventario")
 
 
+# =============================
+# CARRITO
+# =============================
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
     carrito = session.get("carrito", [])
@@ -293,7 +360,7 @@ def agregar():
 
     item = fila.iloc[0]
 
-    precio = float(item["PRECIO DE VENTA"] or 0)
+    precio = float(item["COSTO UNITARIO"] or 0)
 
     carrito.append({
         "codigo": item["CODIGO"],
@@ -307,6 +374,9 @@ def agregar():
     return redirect("/")
 
 
+# =============================
+# FINALIZAR
+# =============================
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
     carrito = session.get("carrito", [])
@@ -360,6 +430,9 @@ def finalizar(metodo):
     return redirect("/")
 
 
+# =============================
+# VENTAS
+# =============================
 @app.route("/ventas")
 def ventas():
     conn = get_conn()
@@ -379,6 +452,9 @@ def ventas():
     )
 
 
+# =============================
+# INIT
+# =============================
 init_db()
 
 if __name__ == "__main__":
