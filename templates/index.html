@@ -188,21 +188,6 @@ tr:nth-child(even) {
     <h2>Agregar Producto</h2>
 
     <form method="get" action="/">
-        <input 
-            class="buscador-google"
-            type="text" 
-            name="buscar" 
-            placeholder="Buscar libro..."
-            value="{{ buscar_actual }}"
-            list="lista_sugerencias"
-        >
-
-        <datalist id="lista_sugerencias">
-            {% for s in sugerencias %}
-                <option value="{{ s }}">
-            {% endfor %}
-        </datalist>
-
         <div class="filtros">
             <select name="editorial">
                 <option value="">Editorial</option>
@@ -223,7 +208,7 @@ tr:nth-child(even) {
             </select>
         </div>
 
-        <button type="submit" class="btn-filtrar">Filtrar</button>
+        <button type="submit" class="btn-filtrar">Filtrar inventario</button>
     </form>
 
     <div class="top-actions">
@@ -231,7 +216,22 @@ tr:nth-child(even) {
     </div>
 
     <form action="/agregar" method="post">
-        <input type="text" name="codigo" placeholder="Código del libro" required>
+        <input 
+            class="buscador-google"
+            type="text" 
+            name="codigo" 
+            placeholder="Buscar por código o nombre del libro..."
+            list="lista_sugerencias"
+            autocomplete="off"
+            required
+        >
+
+        <datalist id="lista_sugerencias">
+            {% for s in sugerencias %}
+                <option value="{{ s }}">
+            {% endfor %}
+        </datalist>
+
         <input type="number" name="cantidad" min="1" placeholder="Cantidad" required>
         <button class="btn-agregar">Agregar al carrito</button>
     </form>

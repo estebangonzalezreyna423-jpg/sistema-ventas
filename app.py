@@ -16,9 +16,6 @@ USUARIOS = {
     "PC3": "123"
 }
 
-# =============================
-# DB
-# =============================
 def get_conn():
     if not DATABASE_URL:
         return None
@@ -51,9 +48,6 @@ def init_db():
     conn.close()
 
 
-# =============================
-# UTILIDADES
-# =============================
 def limpiar(valor):
     return str(valor).strip().upper() if valor else ""
 
@@ -93,7 +87,6 @@ def guardar_excel(df):
 def aplicar_filtros(df):
     editoriales = request.args.getlist("editorial")
     categorias = request.args.getlist("categoria")
-    buscar = request.args.get("buscar", "")
 
     editoriales = [e.upper() for e in editoriales if e.strip()]
     categorias = [c.upper() for c in categorias if c.strip()]
@@ -104,19 +97,33 @@ def aplicar_filtros(df):
     if categorias:
         df = df[df["CATEGORIA"].astype(str).str.upper().isin(categorias)]
 
-    if buscar:
-        buscar = buscar.upper()
-        df = df[
-            df["CODIGO"].astype(str).str.upper().str.contains(buscar, na=False) |
-            df["NOMBRE DEL PRODUCTO"].astype(str).str.upper().str.contains(buscar, na=False)
-        ]
-
     return df
 
 
-# =============================
-# LOGIN
-# =============================
+def opciones_filtros(df):
+    editoriales = sorted(df["EDITORIAL"].dropna().astype(str).unique())
+    categorias = sorted(df["CATEGORIA"].dropna().astype(str).unique())
+
+    editoriales = [x for x in editoriales if x.strip() != ""]
+    categorias = [x for x in categorias if x.strip() != ""]
+
+    sugerencias = []
+
+    for _, row in df.iterrows():
+        codigo = str(row["CODIGO"]).strip()
+        nombre = str(row["NOMBRE DEL PRODUCTO"]).strip()
+
+        if codigo:
+            sugerencias.append(codigo)
+
+        if nombre:
+            sugerencias.append(nombre)
+
+    sugerencias = sorted(list(set(sugerencias)))
+
+    return editoriales, categorias, sugerencias
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -139,31 +146,33 @@ def logout():
     return redirect("/login")
 
 
-# =============================
-# INDEX
-# =============================
 @app.route("/")
 def index():
     if login_requerido():
         return redirect("/login")
 
-    df = aplicar_filtros(cargar_excel())
+    df_original = cargar_excel()
+    df = aplicar_filtros(df_original)
 
     carrito = session.get("carrito", [])
     total = sum(i["subtotal"] for i in carrito)
+
+    editoriales, categorias, sugerencias = opciones_filtros(df_original)
 
     return render_template(
         "index.html",
         tabla=df.to_html(index=False, classes="tabla"),
         carrito=carrito,
-        total=total,
-        usuario=session.get("user")
+        total=round(total, 2),
+        usuario=session.get("user"),
+        editoriales=editoriales,
+        categorias=categorias,
+        sugerencias=sugerencias,
+        editoriales_seleccionadas=request.args.getlist("editorial"),
+        categorias_seleccionadas=request.args.getlist("categoria")
     )
 
 
-# =============================
-# INVENTARIO
-# =============================
 @app.route("/inventario")
 def inventario():
     if login_requerido():
@@ -172,18 +181,23 @@ def inventario():
     if session.get("user") != "PC1":
         return redirect("/")
 
-    df = aplicar_filtros(cargar_excel())
+    df_original = cargar_excel()
+    df = aplicar_filtros(df_original)
+
+    editoriales, categorias, sugerencias = opciones_filtros(df_original)
 
     return render_template(
         "inventario.html",
         tabla=df.to_html(index=False, classes="tabla"),
-        usuario=session.get("user")
+        usuario=session.get("user"),
+        editoriales=editoriales,
+        categorias=categorias,
+        sugerencias=sugerencias,
+        editoriales_seleccionadas=request.args.getlist("editorial"),
+        categorias_seleccionadas=request.args.getlist("categoria")
     )
 
 
-# =============================
-# CARRITO
-# =============================
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
     carrito = session.get("carrito", [])
@@ -203,10 +217,22 @@ def agregar():
     df = cargar_excel()
     carrito = session.get("carrito", [])
 
-    codigo = limpiar(request.form.get("codigo"))
+    busqueda = limpiar(request.form.get("codigo"))
     cantidad = int(request.form.get("cantidad") or 0)
 
-    fila = df[df["CODIGO"].astype(str).str.upper() == codigo]
+    if not busqueda or cantidad <= 0:
+        return redirect("/")
+
+    fila = df[
+        (df["CODIGO"].astype(str).str.upper() == busqueda) |
+        (df["NOMBRE DEL PRODUCTO"].astype(str).str.upper() == busqueda)
+    ]
+
+    if fila.empty:
+        fila = df[
+            df["CODIGO"].astype(str).str.upper().str.contains(busqueda, na=False) |
+            df["NOMBRE DEL PRODUCTO"].astype(str).str.upper().str.contains(busqueda, na=False)
+        ]
 
     if fila.empty:
         return redirect("/")
@@ -226,9 +252,6 @@ def agregar():
     return redirect("/")
 
 
-# =============================
-# FINALIZAR
-# =============================
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
     carrito = session.get("carrito", [])
@@ -283,9 +306,6 @@ def finalizar(metodo):
     return redirect("/")
 
 
-# =============================
-# VENTAS
-# =============================
 @app.route("/ventas")
 def ventas():
     if login_requerido():
@@ -330,9 +350,6 @@ def ventas():
     )
 
 
-# =============================
-# ELIMINAR VENTA + DEVOLVER STOCK
-# =============================
 @app.route("/ventas/eliminar/<int:id>")
 def eliminar_venta(id):
     if login_requerido():
@@ -381,9 +398,6 @@ def eliminar_venta(id):
     return redirect("/ventas")
 
 
-# =============================
-# INIT
-# =============================
 init_db()
 
 if __name__ == "__main__":
