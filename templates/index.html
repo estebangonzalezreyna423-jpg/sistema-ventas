@@ -132,78 +132,32 @@ tr:nth-child(even) {
 }
 
 .filtros {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 10px;
-}
-
-.filtro-box {
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    padding: 10px;
-    max-height: 140px;
-    overflow-y: auto;
-    background: #f8fafc;
-}
-
-.filtro-box h4 {
-    margin: 0 0 8px 0;
-    font-size: 14px;
-    color: #1e3a8a;
-}
-
-.check-item {
-    display: block;
-    font-size: 13px;
-    margin-bottom: 6px;
-}
-
-.check-item input {
-    width: auto;
-    margin-right: 6px;
-    margin-bottom: 0;
-}
-
-.filtro-actions {
     display: flex;
     gap: 10px;
-    margin-bottom: 12px;
 }
 
-.btn-filtrar {
-    background: #1e3a8a;
-    color: white;
-    flex: 1;
-}
-
-.btn-limpiar {
-    background: #64748b;
-    color: white;
-    flex: 1;
-    text-align: center;
-    text-decoration: none;
-    padding: 10px;
-    border-radius: 6px;
+.top-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    align-items: center;
 }
 
 .inventario {
     margin-top: 20px;
 }
 
-@media (max-width: 900px) {
-    .grid {
-        grid-template-columns: 1fr;
-    }
+.buscador-google {
+    border-radius: 20px;
+    padding: 12px 15px;
+    font-size: 15px;
+}
 
-    .filtros {
-        grid-template-columns: 1fr;
-    }
-
-    header {
-        flex-direction: column;
-        gap: 10px;
-    }
+.btn-filtrar {
+    width: 100%;
+    background: #1e3a8a;
+    color: white;
+    margin-bottom: 10px;
 }
 </style>
 </head>
@@ -235,9 +189,10 @@ tr:nth-child(even) {
 
     <form method="get" action="/">
         <input 
+            class="buscador-google"
             type="text" 
             name="buscar" 
-            placeholder="Buscar por código, nombre, editorial o categoría"
+            placeholder="Buscar libro..."
             value="{{ buscar_actual }}"
             list="lista_sugerencias"
         >
@@ -249,42 +204,31 @@ tr:nth-child(even) {
         </datalist>
 
         <div class="filtros">
-            <div class="filtro-box">
-                <h4>Editoriales</h4>
+            <select name="editorial">
+                <option value="">Editorial</option>
                 {% for e in editoriales %}
-                    <label class="check-item">
-                        <input 
-                            type="checkbox" 
-                            name="editorial" 
-                            value="{{ e }}"
-                            {% if e in editoriales_seleccionadas %}checked{% endif %}
-                        >
+                    <option value="{{ e }}" {% if e in editoriales_seleccionadas %}selected{% endif %}>
                         {{ e }}
-                    </label>
+                    </option>
                 {% endfor %}
-            </div>
+            </select>
 
-            <div class="filtro-box">
-                <h4>Categorías</h4>
+            <select name="categoria">
+                <option value="">Categoría</option>
                 {% for c in categorias %}
-                    <label class="check-item">
-                        <input 
-                            type="checkbox" 
-                            name="categoria" 
-                            value="{{ c }}"
-                            {% if c in categorias_seleccionadas %}checked{% endif %}
-                        >
+                    <option value="{{ c }}" {% if c in categorias_seleccionadas %}selected{% endif %}>
                         {{ c }}
-                    </label>
+                    </option>
                 {% endfor %}
-            </div>
+            </select>
         </div>
 
-        <div class="filtro-actions">
-            <button type="submit" class="btn-filtrar">Filtrar</button>
-            <a href="/" class="btn-limpiar">Limpiar</a>
-        </div>
+        <button type="submit" class="btn-filtrar">Filtrar</button>
     </form>
+
+    <div class="top-actions">
+        <a href="/" class="btn-link btn-inventario">Limpiar filtros</a>
+    </div>
 
     <form action="/agregar" method="post">
         <input type="text" name="codigo" placeholder="Código del libro" required>
