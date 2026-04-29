@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html>
 <head>
     <title>Ventas</title>
@@ -10,7 +10,6 @@ body {
     background: #eef2f7;
 }
 
-/* HEADER */
 header {
     background: #1e3a8a;
     color: white;
@@ -24,7 +23,6 @@ header h1 { margin: 0; }
 
 .container { padding: 20px; }
 
-/* CARD */
 .card {
     background: white;
     padding: 20px;
@@ -32,7 +30,6 @@ header h1 { margin: 0; }
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-/* BOTONES */
 .btn {
     padding: 10px 12px;
     border-radius: 6px;
@@ -52,7 +49,6 @@ header h1 { margin: 0; }
     text-decoration: none;
 }
 
-/* TABLA */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -74,9 +70,8 @@ tr:nth-child(even) {
     background: #f1f5f9;
 }
 
-/* TOTAL */
 .total {
-    margin-top: 15px;
+    margin-top: 10px;
     font-size: 18px;
     font-weight: bold;
 }
@@ -86,6 +81,10 @@ tr:nth-child(even) {
     padding: 10px;
     background: #f8fafc;
     border-radius: 8px;
+}
+
+.tabla-scroll {
+    overflow-x: auto;
 }
 </style>
 
@@ -108,6 +107,7 @@ tr:nth-child(even) {
 
 <h2>Registro de ventas</h2>
 
+<div class="tabla-scroll">
 <table>
     <tr>
         <th>ID</th>
@@ -123,40 +123,38 @@ tr:nth-child(even) {
 
     {% for v in ventas %}
     <tr>
-        <td>{{ v.id }}</td>
-        <td>{{ v.usuario }}</td>
-        <td>{{ v.codigo }}</td>
-        <td>{{ v.nombre }}</td>
-        <td>{{ v.cantidad }}</td>
-        <td>S/ {{ v.subtotal }}</td>
-        <td>{{ v.metodo }}</td>
-        <td>{{ v.fecha }}</td>
+        <td>{{ v["id"] }}</td>
+        <td>{{ v["usuario"] }}</td>
+        <td>{{ v["codigo"] }}</td>
+        <td>{{ v["nombre"] }}</td>
+        <td>{{ v["cantidad"] }}</td>
+        <td>S/ {{ v["subtotal"] }}</td>
+        <td>{{ v["metodo"] }}</td>
+        <td>{{ v["fecha"] }}</td>
         <td>
-            <a href="/ventas/eliminar/{{ v.id }}"
+            <a href="/ventas/eliminar/{{ v['id'] }}"
                class="btn-delete"
-               onclick="return confirm('¿Eliminar esta venta?')">
+               onclick="return confirm('¿Seguro que quieres eliminar esta venta?')">
                X
             </a>
         </td>
     </tr>
     {% endfor %}
 </table>
+</div>
 
-<!-- RESUMEN -->
 <div class="resumen">
-
     <div class="total">
-        Total vendido: S/ {{ total }}
+        Total vendido: S/ {{ total | default(0) }}
     </div>
 
     <div class="total">
-        Total en efectivo: S/ {{ total_efectivo }}
+        Total en efectivo: S/ {{ total_efectivo | default(0) }}
     </div>
 
     <div class="total">
-        Total en Yape: S/ {{ total_yape }}
+        Total en Yape: S/ {{ total_yape | default(0) }}
     </div>
-
 </div>
 
 </div>
