@@ -4,74 +4,55 @@
     <title>Sistema de Ventas</title>
 
 <style>
-* {
-    box-sizing: border-box;
-}
-
 body {
-    font-family: Arial, sans-serif;
+    font-family: "Segoe UI", Arial, sans-serif;
     margin: 0;
-    background: linear-gradient(135deg, #eef2f7, #dbeafe);
+    background: #f5f7fa;
     color: #1f2937;
 }
 
 /* HEADER */
 header {
-    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    background: #1e3a8a;
     color: white;
-    padding: 18px 30px;
+    padding: 16px 30px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
 }
 
 .logo-titulo {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
 }
 
 .logo-colegio {
-    width: 58px;
-    height: 58px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     background: white;
-    padding: 4px;
-    object-fit: cover;
+    padding: 3px;
 }
 
 header h1 {
     margin: 0;
-    font-size: 25px;
-}
-
-.subtitulo {
-    font-size: 13px;
-    opacity: 0.9;
-    margin-top: 3px;
+    font-size: 22px;
 }
 
 .usuario {
-    font-size: 14px;
     display: flex;
-    align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
+    align-items: center;
 }
 
+/* BOTONES HEADER */
 .btn-link {
-    padding: 9px 13px;
-    border-radius: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
     text-decoration: none;
     color: white;
-    font-weight: bold;
-    transition: 0.2s;
-}
-
-.btn-link:hover {
-    transform: translateY(-2px);
-    opacity: 0.9;
+    font-size: 13px;
 }
 
 .btn-ventas { background: #f59e0b; }
@@ -80,208 +61,147 @@ header h1 {
 
 /* LAYOUT */
 .container {
-    padding: 24px;
+    padding: 25px;
 }
 
 .grid {
     display: grid;
     grid-template-columns: 1fr 2fr;
-    gap: 22px;
+    gap: 20px;
 }
 
 /* CARDS */
 .card {
-    background: rgba(255,255,255,0.95);
-    padding: 22px;
-    border-radius: 18px;
-    box-shadow: 0 8px 22px rgba(0,0,0,0.12);
-    border: 1px solid rgba(255,255,255,0.7);
-}
-
-.card h2 {
-    margin-top: 0;
-    color: #1e3a8a;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
 }
 
 /* INPUTS */
 input, select {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     margin-bottom: 10px;
-    border-radius: 10px;
-    border: 1px solid #cbd5e1;
-    outline: none;
-    font-size: 14px;
-    background: white;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
 }
 
-input:focus, select:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
-}
-
+/* BUSCADOR */
 .buscador-google {
-    border-radius: 30px;
-    padding: 14px 18px;
-    font-size: 15px;
+    border-radius: 25px;
+    padding: 12px;
 }
 
 /* BOTONES */
 button {
-    padding: 11px;
+    padding: 10px;
     border: none;
-    border-radius: 10px;
+    border-radius: 6px;
     cursor: pointer;
-    font-weight: bold;
 }
 
 .btn-agregar {
     width: 100%;
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    background: #2563eb;
     color: white;
-    transition: 0.2s;
-}
-
-.btn-agregar:hover {
-    transform: translateY(-2px);
 }
 
 .btn-filtrar {
     width: 100%;
     background: #1e3a8a;
     color: white;
-    margin-bottom: 10px;
 }
 
 .btn-eliminar {
-    background: #ef4444;
+    background: red;
     color: white;
-    padding: 6px 10px;
-    border-radius: 8px;
+    padding: 5px 8px;
+    border-radius: 6px;
     text-decoration: none;
-    font-weight: bold;
-}
-
-/* FILTROS */
-.filtros {
-    display: flex;
-    gap: 10px;
-}
-
-.top-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 12px;
 }
 
 /* TABLA */
 table {
     width: 100%;
     border-collapse: collapse;
-    overflow: hidden;
-    border-radius: 12px;
 }
 
 th {
     background: #1e3a8a;
     color: white;
-    padding: 10px;
+    padding: 8px;
     font-size: 13px;
 }
 
 td {
-    padding: 10px;
+    padding: 8px;
     text-align: center;
     border-bottom: 1px solid #e5e7eb;
-    font-size: 14px;
 }
 
 tr:nth-child(even) {
-    background: #f8fafc;
-}
-
-tr:hover {
-    background: #e0f2fe;
+    background: #f9fafb;
 }
 
 /* TOTAL */
 .total {
-    font-size: 22px;
-    margin-top: 16px;
+    font-size: 18px;
+    margin-top: 12px;
     font-weight: bold;
-    color: #111827;
     text-align: right;
 }
 
-/* PAGO */
+/* BOTONES DE PAGO (MEJORADOS) */
 .botones-pago {
     display: flex;
     gap: 12px;
-    margin-top: 16px;
+    margin-top: 15px;
 }
 
 .btn-finalizar,
 .btn-yape {
     flex: 1;
-    padding: 13px;
-    font-size: 14px;
-    border-radius: 12px;
-    color: white;
-    text-align: center;
+    padding: 12px;
+    border-radius: 8px;
     text-decoration: none;
     font-weight: bold;
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 8px;
-    transition: 0.2s;
-}
-
-.btn-finalizar:hover,
-.btn-yape:hover {
-    transform: translateY(-2px);
+    justify-content: center;
+    gap: 10px;
+    font-size: 14px;
 }
 
 .btn-finalizar {
-    background: linear-gradient(135deg, #16a34a, #15803d);
+    background: #16a34a;
+    color: white;
 }
 
 .btn-yape {
-    background: linear-gradient(135deg, #6d28d9, #4c1d95);
+    background: #6d28d9;
+    color: white;
 }
 
+/* ICONOS MÁS GRANDES */
 .icono-pago {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     object-fit: contain;
     background: white;
-    border-radius: 50%;
-    padding: 2px;
+    border-radius: 6px;
+    padding: 3px;
 }
 
 /* INVENTARIO */
 .inventario {
-    margin-top: 24px;
-}
-
-.tabla-scroll {
-    overflow-x: auto;
+    margin-top: 20px;
 }
 
 /* RESPONSIVE */
 @media (max-width: 900px) {
-    header {
-        flex-direction: column;
-        gap: 12px;
-        text-align: center;
-    }
-
     .grid {
         grid-template-columns: 1fr;
-    }
-
-    .filtros {
-        flex-direction: column;
     }
 
     .botones-pago {
@@ -295,19 +215,12 @@ tr:hover {
 
 <header>
     <div class="logo-titulo">
-        <img 
-            src="https://yt3.googleusercontent.com/ytc/AIdro_k-fPS9Xt75ReX2p3TPb8kFAOml2N-cvmj7p1e1Q8w05xc=s900-c-k-c0x00ffffff-no-rj" 
-            class="logo-colegio"
-        >
-
-        <div>
-            <h1>SISTEMA DE VENTAS</h1>
-            <div class="subtitulo">Gestión de libros e inventario</div>
-        </div>
+        <img src="https://yt3.googleusercontent.com/ytc/AIdro_k-fPS9Xt75ReX2p3TPb8kFAOml2N-cvmj7p1e1Q8w05xc=s900-c-k-c0x00ffffff-no-rj" class="logo-colegio">
+        <h1>SISTEMA DE VENTAS</h1>
     </div>
 
     <div class="usuario">
-        <span>Usuario: <strong>{{ usuario }}</strong></span>
+        {{ usuario }}
 
         <a href="/ventas" class="btn-link btn-ventas">Ventas</a>
 
@@ -315,7 +228,7 @@ tr:hover {
             <a href="/inventario" class="btn-link btn-inventario">Inventario</a>
         {% endif %}
 
-        <a href="/logout" class="btn-link btn-salir">Cerrar sesión</a>
+        <a href="/logout" class="btn-link btn-salir">Salir</a>
     </div>
 </header>
 
@@ -327,113 +240,76 @@ tr:hover {
     <h2>Agregar Producto</h2>
 
     <form method="get" action="/">
-        <div class="filtros">
-            <select name="editorial">
-                <option value="">Editorial</option>
-                {% for e in editoriales %}
-                    <option value="{{ e }}" {% if e in editoriales_seleccionadas %}selected{% endif %}>
-                        {{ e }}
-                    </option>
-                {% endfor %}
-            </select>
+        <select name="editorial">
+            <option value="">Editorial</option>
+            {% for e in editoriales %}
+                <option value="{{ e }}">{{ e }}</option>
+            {% endfor %}
+        </select>
 
-            <select name="categoria">
-                <option value="">Categoría</option>
-                {% for c in categorias %}
-                    <option value="{{ c }}" {% if c in categorias_seleccionadas %}selected{% endif %}>
-                        {{ c }}
-                    </option>
-                {% endfor %}
-            </select>
-        </div>
+        <select name="categoria">
+            <option value="">Categoría</option>
+            {% for c in categorias %}
+                <option value="{{ c }}">{{ c }}</option>
+            {% endfor %}
+        </select>
 
-        <button type="submit" class="btn-filtrar">Filtrar inventario</button>
+        <button class="btn-filtrar">Filtrar</button>
     </form>
 
-    <div class="top-actions">
-        <a href="/" class="btn-link btn-inventario">Limpiar filtros</a>
-    </div>
-
     <form action="/agregar" method="post">
-        <input 
-            class="buscador-google"
-            type="text" 
-            name="codigo" 
-            placeholder="Buscar por código o nombre del libro..."
-            list="lista_sugerencias"
-            autocomplete="off"
-            required
-        >
-
-        <datalist id="lista_sugerencias">
-            {% for s in sugerencias %}
-                <option value="{{ s }}">
-            {% endfor %}
-        </datalist>
-
-        <input type="number" name="cantidad" min="1" placeholder="Cantidad" required>
-        <button class="btn-agregar">Agregar al carrito</button>
+        <input class="buscador-google" type="text" name="codigo" placeholder="Buscar libro..." required>
+        <input type="number" name="cantidad" placeholder="Cantidad" required>
+        <button class="btn-agregar">Agregar</button>
     </form>
 </div>
 
 <div class="card">
     <h2>Carrito</h2>
 
-    <div class="tabla-scroll">
-        <table>
-            <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Precio</th>
-                <th>Cant.</th>
-                <th>Total</th>
-                <th></th>
-            </tr>
+    <table>
+        <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Precio</th>
+            <th>Cant.</th>
+            <th>Total</th>
+            <th></th>
+        </tr>
 
-            {% for item in carrito %}
-            <tr>
-                <td>{{ item["codigo"] }}</td>
-                <td>{{ item["nombre"] }}</td>
-                <td>S/ {{ item["precio"] }}</td>
-                <td>{{ item["cantidad"] }}</td>
-                <td>S/ {{ item["subtotal"] }}</td>
-                <td>
-                    <a href="/eliminar/{{ loop.index0 }}" class="btn-eliminar">X</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
+        {% for item in carrito %}
+        <tr>
+            <td>{{ item.codigo }}</td>
+            <td>{{ item.nombre }}</td>
+            <td>{{ item.precio }}</td>
+            <td>{{ item.cantidad }}</td>
+            <td>{{ item.subtotal }}</td>
+            <td><a href="/eliminar/{{ loop.index0 }}" class="btn-eliminar">X</a></td>
+        </tr>
+        {% endfor %}
+    </table>
 
     <div class="total">Total: S/ {{ total }}</div>
 
     <div class="botones-pago">
         <a href="/finalizar/efectivo" class="btn-finalizar">
-            <img 
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpKpYi_kDW8xo1uHPEOnX76bBZunAU03OUiw&s"
-                class="icono-pago"
-            >
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpKpYi_kDW8xo1uHPEOnX76bBZunAU03OUiw&s" class="icono-pago">
             Efectivo
         </a>
 
         <a href="/finalizar/yape" class="btn-yape">
-            <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/0/08/Icono_de_la_aplicaci%C3%B3n_Yape.png"
-                class="icono-pago"
-            >
+            <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Icono_de_la_aplicaci%C3%B3n_Yape.png" class="icono-pago">
             Yape
         </a>
     </div>
+
 </div>
 
 </div>
 
 <div class="card inventario">
     <h2>Inventario</h2>
-
-    <div class="tabla-scroll">
-        {{ tabla | safe }}
-    </div>
+    {{ tabla | safe }}
 </div>
 
 </div>
