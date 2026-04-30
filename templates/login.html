@@ -1,229 +1,207 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Login - Sistema de Ventas</title>
+<meta charset="UTF-8">
+<title>Login - Sistema de Ventas</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+<style>
+* { box-sizing: border-box; }
 
-        body {
-            margin: 0;
-            font-family: "Agency FB", "Segoe UI", Arial, sans-serif;
-            min-height: 100vh;
-            display: flex;
-        }
+body {
+    margin: 0;
+    font-family: "Agency FB", "Segoe UI", Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+}
 
-        /* LADO IZQUIERDO */
-        .left {
-            position: relative;
-            width: 60%;
-            height: 100vh;
-            overflow: hidden;
-            background: #1e3a8a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+/* IZQUIERDA */
+.left {
+    position: relative;
+    width: 60%;
+    height: 100vh;
+    background-image:
+        linear-gradient(rgba(15, 23, 42, 0.58), rgba(15, 23, 42, 0.58)),
+        url("https://unitru.edu.pe/webfiles///Noticia/2026/1//0_Noticia_300120260245.jpg");
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
-        .slider {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-        }
+.left-content {
+    color: white;
+    text-align: center;
+    max-width: 540px;
+    padding: 25px;
+}
 
-        .slides {
-            display: flex;
-            width: 200%;
-            height: 100%;
-            animation: moverSlider 12s infinite ease-in-out;
-        }
+.left-content h1 {
+    font-size: 48px;
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+}
 
-        .slides img {
-            width: 50%;
-            height: 100%;
-            object-fit: cover;
-        }
+.left-content p {
+    font-size: 22px;
+    line-height: 1.4;
+}
 
-        .left::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.58);
-            z-index: 1;
-        }
+/* DERECHA */
+.right {
+    width: 40%;
+    background: linear-gradient(135deg, #e5e7eb, #f8fafc);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
-        .left-content {
-            position: relative;
-            z-index: 2;
-            color: white;
-            text-align: center;
-            max-width: 520px;
-            padding: 20px;
-        }
+.login-box {
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(10px);
+    padding: 42px;
+    border-radius: 22px;
+    width: 360px;
+    box-shadow: 0 20px 45px rgba(15,23,42,0.22);
+    text-align: center;
+    border: 1px solid rgba(203,213,225,0.8);
+}
 
-        .left-content h1 {
-            font-size: 46px;
-            font-weight: bold;
-            margin-bottom: 14px;
-            letter-spacing: 1px;
-        }
+.login-box h2 {
+    font-size: 32px;
+    margin-bottom: 8px;
+    color: #0f172a;
+}
 
-        .left-content p {
-            font-size: 22px;
-            line-height: 1.4;
-            margin: 0 auto;
-            width: 85%;
-        }
+.login-box .subtitulo {
+    margin-bottom: 25px;
+    color: #64748b;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+}
 
-        @keyframes moverSlider {
-            0% { transform: translateX(0); }
-            40% { transform: translateX(0); }
-            50% { transform: translateX(-50%); }
-            90% { transform: translateX(-50%); }
-            100% { transform: translateX(0); }
-        }
+.input-group {
+    margin-bottom: 16px;
+    text-align: left;
+}
 
-        /* LADO DERECHO */
-        .right {
-            width: 40%;
-            background: #e5e7eb;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+.input-group label {
+    display: block;
+    margin-bottom: 7px;
+    color: #334155;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+}
 
-        .login-box {
-            background: #f9fafb;
-            padding: 40px;
-            border-radius: 16px;
-            width: 330px;
-            box-shadow: 0px 15px 35px rgba(0,0,0,0.22);
-            text-align: center;
-        }
+.input-wrap {
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 13px;
+    padding: 0 12px;
+    transition: 0.25s;
+}
 
-        .login-box h2 {
-            font-size: 31px;
-            margin-bottom: 25px;
-            color: #0f172a;
-            font-weight: bold;
-        }
+.input-wrap span {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #64748b;
+    margin-right: 8px;
+}
 
-        .input-group {
-            margin-bottom: 15px;
-        }
+.input-wrap input {
+    width: 100%;
+    padding: 14px 5px;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 15px;
+    color: #0f172a;
+}
 
-        .input-group input {
-            width: 100%;
-            padding: 13px;
-            border-radius: 9px;
-            border: 1px solid #cbd5e1;
-            font-size: 16px;
-            background: #f1f5f9;
-            text-align: center;
-        }
+.input-wrap:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
+    background: #ffffff;
+}
 
-        .input-group input:focus {
-            outline: none;
-            border: 1px solid #1e3a8a;
-            box-shadow: 0 0 8px rgba(30,58,138,0.35);
-        }
+.btn-login {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #2563eb, #1e3a8a);
+    color: white;
+    border: none;
+    border-radius: 13px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.25s;
+    box-shadow: 0 10px 22px rgba(37,99,235,0.28);
+}
 
-        .btn-login {
-            width: 100%;
-            padding: 13px;
-            background: #1e3a8a;
-            color: white;
-            border: none;
-            border-radius: 9px;
-            font-size: 19px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.25s;
-        }
+.btn-login:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+}
 
-        .btn-login:hover {
-            background: #1e40af;
-            transform: translateY(-2px);
-        }
+.error {
+    color: #dc2626;
+    margin-bottom: 12px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+}
 
-        .error {
-            color: #dc2626;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        @media (max-width: 850px) {
-            body {
-                flex-direction: column;
-            }
-
-            .left,
-            .right {
-                width: 100%;
-            }
-
-            .left {
-                height: 45vh;
-            }
-
-            .right {
-                min-height: 55vh;
-            }
-
-            .left-content h1 {
-                font-size: 34px;
-            }
-
-            .left-content p {
-                font-size: 17px;
-            }
-        }
-    </style>
+@media (max-width: 850px) {
+    body { flex-direction: column; }
+    .left, .right { width: 100%; }
+    .left { height: 42vh; }
+    .right { min-height: 58vh; }
+    .left-content h1 { font-size: 34px; }
+    .left-content p { font-size: 17px; }
+}
+</style>
 </head>
 
 <body>
 
-    <div class="left">
-        <div class="slider">
-            <div class="slides">
-                <img src="https://scontent.flim37-1.fna.fbcdn.net/v/t39.30808-6/594096296_122113399983078210_7565102985565082261_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=2a1932&_nc_eui2=AeHUkeA6mQsSc2hIktF7usgYYGCbgGnw-MdgYJuAafD4xyfRZq6rRJHuwbvTCm5D5GFveN0WUZ-Xsm0t3iK2oc7S&_nc_ohc=p8T08UfUMw4Q7kNvwEOcTKa&_nc_oc=Adqd4LAkRsI-pIKDIvbIYhnnyWaHWt3bPWSKrFT_Rn5yw8fbkwvIn1hB7VHfB2rRIyCulV9RIQd2lYjtNXgcJM0p&_nc_zt=23&_nc_ht=scontent.flim37-1.fna&_nc_gid=qTpKlaLVOX7bnSO5lL9dAw&_nc_ss=7b2a8&oh=00_Af2-M2a1KMIvGWLrM3u9kkwfnyX17aq7M1z43SM3zzKzAQ&oe=69F8A395">
-                <img src="https://unitru.edu.pe/webfiles///Noticia/2026/1//0_Noticia_300120260245.jpg">
+<div class="left">
+    <div class="left-content">
+        <h1>SISTEMA DE VENTAS</h1>
+        <p>Controla inventario, ventas y rendimiento de cada PC en tiempo real.</p>
+    </div>
+</div>
+
+<div class="right">
+    <div class="login-box">
+        <h2>INICIAR SESIÓN</h2>
+        <div class="subtitulo">Accede al panel de ventas e inventario</div>
+
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            <div class="input-group">
+                <label>Usuario</label>
+                <div class="input-wrap">
+                    <span>👤</span>
+                    <input type="text" name="usuario" placeholder="Ejemplo: PC1" required>
+                </div>
             </div>
-        </div>
 
-        <div class="left-content">
-            <h1>SISTEMA DE VENTAS</h1>
-            <p>Controla inventario, ventas y rendimiento de cada PC en tiempo real.</p>
-        </div>
-    </div>
-
-    <div class="right">
-        <div class="login-box">
-
-            <h2>INICIAR SESIÓN</h2>
-
-            {% if error %}
-                <div class="error">{{ error }}</div>
-            {% endif %}
-
-            <form method="POST">
-                <div class="input-group">
-                    <input type="text" name="usuario" placeholder="Usuario (pc1, pc2...)" required>
+            <div class="input-group">
+                <label>Contraseña</label>
+                <div class="input-wrap">
+                    <span>🔒</span>
+                    <input type="password" name="password" placeholder="Ingresa tu contraseña" required>
                 </div>
+            </div>
 
-                <div class="input-group">
-                    <input type="password" name="password" placeholder="Contraseña" required>
-                </div>
-
-                <button type="submit" class="btn-login">INGRESAR</button>
-            </form>
-
-        </div>
+            <button type="submit" class="btn-login">INGRESAR</button>
+        </form>
     </div>
+</div>
 
 </body>
 </html>
