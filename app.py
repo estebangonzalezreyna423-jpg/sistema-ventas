@@ -365,11 +365,23 @@ def eliminar_producto():
         return redirect("/")
 
     df = cargar_excel()
-    codigo = limpiar(request.form.get("codigo"))
+    busqueda = limpiar(request.form.get("codigo"))
 
-    if codigo:
-        df = df[df["CODIGO"].astype(str).str.upper() != codigo]
-        guardar_excel(df)
+    if busqueda:
+        idx = df[
+            (df["CODIGO"].astype(str).str.upper() == busqueda) |
+            (df["NOMBRE DEL PRODUCTO"].astype(str).str.upper() == busqueda)
+        ].index
+
+        if len(idx) == 0:
+            idx = df[
+                df["CODIGO"].astype(str).str.upper().str.contains(busqueda, na=False) |
+                df["NOMBRE DEL PRODUCTO"].astype(str).str.upper().str.contains(busqueda, na=False)
+            ].index
+
+        if len(idx) > 0:
+            df = df.drop(idx[0])
+            guardar_excel(df)
 
     return redirect("/inventario")
 
