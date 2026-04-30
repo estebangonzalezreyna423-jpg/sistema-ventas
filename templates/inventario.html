@@ -16,26 +16,50 @@ body {
 
 /* HEADER */
 header {
-    background: rgba(15, 23, 42, 0.95);
+    background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 32%),
+        linear-gradient(135deg, #0f172a, #111827);
     color: white;
-    padding: 26px 35px;
+    padding: 28px 35px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
 
 header h1 {
     margin: 0;
-    font-size: 34px;
-    letter-spacing: 1px;
+    font-size: 36px;
+    letter-spacing: 2px;
+    font-weight: 800;
+    position: relative;
+}
+
+header h1::after {
+    content: "";
+    display: block;
+    width: 70px;
+    height: 4px;
+    background: linear-gradient(90deg, #38bdf8, #2563eb);
+    border-radius: 20px;
+    margin-top: 8px;
 }
 
 .header-actions {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
 }
 
+.header-actions span {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    padding: 11px 14px;
+    border-radius: 14px;
+    color: #e5e7eb;
+    font-weight: 600;
+}
 /* LAYOUT */
 .container { padding: 30px; }
 
@@ -221,8 +245,8 @@ function toggle(id) {
 
     <div class="acciones-botones">
         {% if usuario == "PC1" %}
-        <button class="btn btn-toggle" onclick="toggle('formEditar')">📦 Editar Stock</button>
-        <button class="btn btn-toggle" onclick="toggle('formAgregar')">➕ Agregar / Eliminar</button>
+        <button class="btn btn-toggle" onclick="toggle('formEditar')"> Editar Stock</button>
+        <button class="btn btn-toggle" onclick="toggle('formAgregar')"> Agregar / Eliminar</button>
         {% endif %}
     </div>
 </div>
