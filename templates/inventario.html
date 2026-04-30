@@ -5,16 +5,13 @@
 <title>Inventario</title>
 
 <style>
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     margin: 0;
     font-family: 'Segoe UI', Arial, sans-serif;
     background: linear-gradient(135deg, #0f172a, #1e293b);
     color: #e5e7eb;
-    min-height: 100vh;
 }
 
 /* HEADER */
@@ -25,18 +22,12 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
 }
 
-.header-actions {
-    display: flex;
-    gap: 10px;
-}
+.header-actions { display: flex; gap: 10px; }
 
 /* LAYOUT */
-.container {
-    padding: 30px;
-}
+.container { padding: 30px; }
 
 .card {
     background: rgba(30, 41, 59, 0.92);
@@ -60,7 +51,6 @@ header {
 .btn-editar { background: #16a34a; }
 .btn-agregar { background: #2563eb; }
 .btn-eliminar { background: #dc2626; }
-
 .btn-volver { background: #2563eb; }
 .btn-excel { background: #22c55e; }
 
@@ -85,14 +75,9 @@ input {
 .hidden { display: none; }
 
 /* TABLA */
-.tabla-scroll {
-    overflow-x: auto;
-}
+.tabla-scroll { overflow-x: auto; }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
+table { width: 100%; border-collapse: collapse; }
 
 th {
     background: #0f172a;
@@ -105,9 +90,7 @@ td {
     text-align: center;
 }
 
-tr:nth-child(even) {
-    background: #1e293b;
-}
+tr:nth-child(even) { background: #1e293b; }
 
 /* BUSCADOR */
 .sugerencias-box {
@@ -142,7 +125,6 @@ function toggle(id) {
 
 <header>
     <h1>INVENTARIO</h1>
-
     <div class="header-actions">
         <span>Usuario: {{ usuario }}</span>
         <a href="/" class="btn btn-volver">Volver</a>
@@ -153,12 +135,10 @@ function toggle(id) {
 <div class="container">
 
 <div class="card">
-
 {% if usuario == "PC1" %}
 <button class="btn btn-toggle" onclick="toggle('formEditar')">Editar Stock</button>
 <button class="btn btn-toggle" onclick="toggle('formAgregar')">Agregar / Eliminar</button>
 {% endif %}
-
 </div>
 
 <!-- EDITAR -->
@@ -207,8 +187,13 @@ function toggle(id) {
 <hr>
 
 <form method="POST" action="/inventario/eliminar">
-<input type="text" name="codigo" placeholder="Código">
+
+<input type="text" id="busquedaEliminar" name="codigo" placeholder="Buscar libro...">
+
+<div id="sugerenciasEliminar" class="sugerencias-box"></div>
+
 <button class="btn btn-eliminar">Eliminar</button>
+
 </form>
 
 </div>
@@ -227,6 +212,8 @@ function toggle(id) {
 
 <script>
 const libros = {{ libros_inventario | tojson }};
+
+/* EDITAR */
 const input = document.getElementById("busquedaLibro");
 const box = document.getElementById("sugerencias");
 const codigoInput = document.getElementById("codigoSeleccionado");
@@ -237,12 +224,11 @@ input.addEventListener("input", () => {
 
     if (v.length < 2) return;
 
-    const r = libros.filter(l =>
+    libros.filter(l =>
         l.codigo.toLowerCase().includes(v) ||
         l.nombre.toLowerCase().includes(v)
-    );
+    ).slice(0,10).forEach(l => {
 
-    r.slice(0,10).forEach(l => {
         const div = document.createElement("div");
         div.className = "sugerencia";
         div.textContent = l.codigo + " - " + l.nombre;
@@ -254,6 +240,34 @@ input.addEventListener("input", () => {
         };
 
         box.appendChild(div);
+    });
+});
+
+/* ELIMINAR */
+const inputE = document.getElementById("busquedaEliminar");
+const boxE = document.getElementById("sugerenciasEliminar");
+
+inputE.addEventListener("input", () => {
+    const v = inputE.value.toLowerCase();
+    boxE.innerHTML = "";
+
+    if (v.length < 2) return;
+
+    libros.filter(l =>
+        l.codigo.toLowerCase().includes(v) ||
+        l.nombre.toLowerCase().includes(v)
+    ).slice(0,10).forEach(l => {
+
+        const div = document.createElement("div");
+        div.className = "sugerencia";
+        div.textContent = l.codigo + " - " + l.nombre;
+
+        div.onclick = () => {
+            inputE.value = l.codigo;
+            boxE.innerHTML = "";
+        };
+
+        boxE.appendChild(div);
     });
 });
 </script>
