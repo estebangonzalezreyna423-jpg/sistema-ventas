@@ -1,90 +1,202 @@
-<!DOCTYPE html> 
-<html>
+<!DOCTYPE html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
     <title>Ventas</title>
 
 <style>
-body {
-    font-family: Arial;
-    margin: 0;
-    background: #eef2f7;
+* {
+    box-sizing: border-box;
 }
 
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #e5e7eb;
+    min-height: 100vh;
+}
+
+/* HEADER */
 header {
-    background: #1e3a8a;
+    background: rgba(15, 23, 42, 0.95);
     color: white;
-    padding: 15px 30px;
+    padding: 18px 35px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.35);
 }
 
-header h1 { margin: 0; }
+header h1 {
+    margin: 0;
+    font-size: 26px;
+    letter-spacing: 1px;
+}
 
-.container { padding: 20px; }
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* LAYOUT */
+.container {
+    padding: 30px;
+}
 
 .card {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    background: rgba(30, 41, 59, 0.92);
+    padding: 25px;
+    border-radius: 18px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.35);
+    border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
+.card h2 {
+    margin-top: 0;
+    color: #f8fafc;
+    font-size: 23px;
+    margin-bottom: 20px;
+}
+
+/* BOTONES */
 .btn {
-    padding: 10px 12px;
-    border-radius: 6px;
+    padding: 10px 15px;
+    border-radius: 10px;
     text-decoration: none;
     color: white;
-    margin-left: 10px;
+    font-weight: 600;
+    transition: 0.25s;
+    display: inline-block;
 }
 
-.btn-back { background: #2563eb; }
-.btn-download { background: #16a34a; }
+.btn-back {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.btn-download {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
 
 .btn-delete {
-    background: red;
+    background: linear-gradient(135deg, #dc2626, #991b1b);
     color: white;
-    padding: 5px 8px;
-    border-radius: 6px;
+    padding: 7px 11px;
+    border-radius: 8px;
     text-decoration: none;
+    font-weight: bold;
+    display: inline-block;
+    transition: 0.25s;
+}
+
+.btn-delete:hover {
+    transform: scale(1.08);
+    filter: brightness(1.15);
+}
+
+/* TABLA */
+.tabla-scroll {
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 15px;
+    min-width: 900px;
 }
 
 th {
-    background: #1e3a8a;
-    color: white;
-    padding: 8px;
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 13px 10px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 td {
-    padding: 8px;
+    padding: 12px 10px;
     text-align: center;
+    color: #e5e7eb;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+tr {
+    background: rgba(15, 23, 42, 0.35);
 }
 
 tr:nth-child(even) {
-    background: #f1f5f9;
+    background: rgba(51, 65, 85, 0.45);
+}
+
+tr:hover {
+    background: rgba(37, 99, 235, 0.18);
+}
+
+/* RESUMEN */
+.resumen {
+    margin-top: 22px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
 }
 
 .total {
-    margin-top: 10px;
-    font-size: 18px;
+    background: rgba(15, 23, 42, 0.75);
+    padding: 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    font-size: 17px;
     font-weight: bold;
+    color: #f8fafc;
+    text-align: center;
 }
 
-.resumen {
-    margin-top: 15px;
-    padding: 10px;
-    background: #f8fafc;
-    border-radius: 8px;
+.total span {
+    display: block;
+    margin-top: 8px;
+    font-size: 22px;
+    color: #38bdf8;
 }
 
-.tabla-scroll {
-    overflow-x: auto;
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+        padding: 18px;
+    }
+
+    .container {
+        padding: 18px;
+    }
+
+    .card {
+        padding: 18px;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .resumen {
+        grid-template-columns: 1fr;
+    }
+
+    header h1 {
+        font-size: 23px;
+    }
 }
 </style>
 
@@ -95,69 +207,72 @@ tr:nth-child(even) {
 <header>
     <h1>VENTAS</h1>
 
-    <div>
+    <div class="header-actions">
         <a href="/" class="btn btn-back">⬅ Volver</a>
-        <a href="/descargar_ventas" class="btn btn-download">Excel</a>
+        <a href="/descargar_ventas" class="btn btn-download">Descargar Excel</a>
     </div>
 </header>
 
 <div class="container">
 
-<div class="card">
+    <div class="card">
 
-<h2>Registro de ventas</h2>
+        <h2>Registro de ventas</h2>
 
-<div class="tabla-scroll">
-<table>
-    <tr>
-        <th>ID</th>
-        <th>Usuario</th>
-        <th>Código</th>
-        <th>Nombre</th>
-        <th>Cantidad</th>
-        <th>Total</th>
-        <th>Método</th>
-        <th>Fecha</th>
-        <th>Acción</th>
-    </tr>
+        <div class="tabla-scroll">
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>Usuario</th>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Cantidad</th>
+                    <th>Total</th>
+                    <th>Método</th>
+                    <th>Fecha</th>
+                    <th>Acción</th>
+                </tr>
 
-    {% for v in ventas %}
-    <tr>
-        <td>{{ v["id"] }}</td>
-        <td>{{ v["usuario"] }}</td>
-        <td>{{ v["codigo"] }}</td>
-        <td>{{ v["nombre"] }}</td>
-        <td>{{ v["cantidad"] }}</td>
-        <td>S/ {{ v["subtotal"] }}</td>
-        <td>{{ v["metodo"] }}</td>
-        <td>{{ v["fecha"] }}</td>
-        <td>
-            <a href="/ventas/eliminar/{{ v['id'] }}"
-               class="btn-delete"
-               onclick="return confirm('¿Seguro que quieres eliminar esta venta?')">
-               X
-            </a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-</div>
+                {% for v in ventas %}
+                <tr>
+                    <td>{{ v["id"] }}</td>
+                    <td>{{ v["usuario"] }}</td>
+                    <td>{{ v["codigo"] }}</td>
+                    <td>{{ v["nombre"] }}</td>
+                    <td>{{ v["cantidad"] }}</td>
+                    <td>S/ {{ v["subtotal"] }}</td>
+                    <td>{{ v["metodo"] }}</td>
+                    <td>{{ v["fecha"] }}</td>
+                    <td>
+                        <a href="/ventas/eliminar/{{ v['id'] }}"
+                           class="btn-delete"
+                           onclick="return confirm('¿Seguro que quieres eliminar esta venta?')">
+                           X
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
 
-<div class="resumen">
-    <div class="total">
-        Total vendido: S/ {{ total | default(0) }}
+        <div class="resumen">
+            <div class="total">
+                Total vendido
+                <span>S/ {{ total | default(0) }}</span>
+            </div>
+
+            <div class="total">
+                Total efectivo
+                <span>S/ {{ total_efectivo | default(0) }}</span>
+            </div>
+
+            <div class="total">
+                Total Yape
+                <span>S/ {{ total_yape | default(0) }}</span>
+            </div>
+        </div>
+
     </div>
-
-    <div class="total">
-        Total en efectivo: S/ {{ total_efectivo | default(0) }}
-    </div>
-
-    <div class="total">
-        Total en Yape: S/ {{ total_yape | default(0) }}
-    </div>
-</div>
-
-</div>
 
 </div>
 
