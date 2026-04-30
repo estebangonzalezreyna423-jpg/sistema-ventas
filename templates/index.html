@@ -4,153 +4,146 @@
     <title>Sistema de Ventas</title>
 
 <style>
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    background: #eef2f7;
-}
-
-header {
-    background: #1e3a8a;
-    color: white;
-    padding: 15px 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-header h1 { margin: 0; }
-
-.usuario { font-size: 14px; }
-
-.usuario a {
-    color: white;
-    margin-left: 10px;
-    text-decoration: none;
-}
-
-.container { padding: 20px; }
-
-.grid {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 20px;
-}
-
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-input, select {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
+* {
     box-sizing: border-box;
 }
 
-button {
-    padding: 10px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: linear-gradient(135deg, #eef2f7, #dbeafe);
+    color: #1f2937;
 }
 
-.btn-agregar {
-    width: 100%;
-    background: #2563eb;
+/* HEADER */
+header {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
     color: white;
-}
-
-.btn-eliminar {
-    background: red;
-    color: white;
-    padding: 5px 8px;
-    border-radius: 6px;
-    text-decoration: none;
-}
-
-.botones-pago {
+    padding: 18px 30px;
     display: flex;
-    gap: 10px;
-    margin-top: 12px;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
 }
 
-.btn-finalizar,
-.btn-yape {
-    flex: 1;
-    padding: 8px;
-    font-size: 12px;
-    border-radius: 6px;
-    color: white;
-    text-align: center;
-    text-decoration: none;
+.logo-titulo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
-.btn-finalizar { background: #16a34a; }
-.btn-yape { background: #6d28d9; }
+.logo-colegio {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: white;
+    padding: 4px;
+    object-fit: cover;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 25px;
+}
+
+.subtitulo {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 3px;
+}
+
+.usuario {
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
 
 .btn-link {
-    padding: 8px 12px;
-    border-radius: 6px;
+    padding: 9px 13px;
+    border-radius: 8px;
     text-decoration: none;
     color: white;
-    margin-left: 10px;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.btn-link:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
 }
 
 .btn-ventas { background: #f59e0b; }
 .btn-inventario { background: #10b981; }
+.btn-salir { background: #ef4444; }
 
-table {
+/* LAYOUT */
+.container {
+    padding: 24px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 22px;
+}
+
+/* CARDS */
+.card {
+    background: rgba(255,255,255,0.95);
+    padding: 22px;
+    border-radius: 18px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+    border: 1px solid rgba(255,255,255,0.7);
+}
+
+.card h2 {
+    margin-top: 0;
+    color: #1e3a8a;
+}
+
+/* INPUTS */
+input, select {
     width: 100%;
-    border-collapse: collapse;
-}
-
-th {
-    background: #1e3a8a;
-    color: white;
-    padding: 8px;
-}
-
-td {
-    padding: 8px;
-    text-align: center;
-}
-
-tr:nth-child(even) {
-    background: #f1f5f9;
-}
-
-.total {
-    font-size: 18px;
-    margin-top: 10px;
-    font-weight: bold;
-}
-
-.filtros {
-    display: flex;
-    gap: 10px;
-}
-
-.top-actions {
-    display: flex;
-    justify-content: space-between;
+    padding: 12px;
     margin-bottom: 10px;
-    align-items: center;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    outline: none;
+    font-size: 14px;
+    background: white;
 }
 
-.inventario {
-    margin-top: 20px;
+input:focus, select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
 }
 
 .buscador-google {
-    border-radius: 20px;
-    padding: 12px 15px;
+    border-radius: 30px;
+    padding: 14px 18px;
     font-size: 15px;
+}
+
+/* BOTONES */
+button {
+    padding: 11px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-agregar {
+    width: 100%;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    transition: 0.2s;
+}
+
+.btn-agregar:hover {
+    transform: translateY(-2px);
 }
 
 .btn-filtrar {
@@ -159,16 +152,162 @@ tr:nth-child(even) {
     color: white;
     margin-bottom: 10px;
 }
+
+.btn-eliminar {
+    background: #ef4444;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* FILTROS */
+.filtros {
+    display: flex;
+    gap: 10px;
+}
+
+.top-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+}
+
+/* TABLA */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+th {
+    background: #1e3a8a;
+    color: white;
+    padding: 10px;
+    font-size: 13px;
+}
+
+td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+}
+
+tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+tr:hover {
+    background: #e0f2fe;
+}
+
+/* TOTAL */
+.total {
+    font-size: 22px;
+    margin-top: 16px;
+    font-weight: bold;
+    color: #111827;
+    text-align: right;
+}
+
+/* PAGO */
+.botones-pago {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.btn-finalizar,
+.btn-yape {
+    flex: 1;
+    padding: 13px;
+    font-size: 14px;
+    border-radius: 12px;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s;
+}
+
+.btn-finalizar:hover,
+.btn-yape:hover {
+    transform: translateY(-2px);
+}
+
+.btn-finalizar {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
+.btn-yape {
+    background: linear-gradient(135deg, #6d28d9, #4c1d95);
+}
+
+.icono-pago {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    background: white;
+    border-radius: 50%;
+    padding: 2px;
+}
+
+/* INVENTARIO */
+.inventario {
+    margin-top: 24px;
+}
+
+.tabla-scroll {
+    overflow-x: auto;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+    header {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filtros {
+        flex-direction: column;
+    }
+
+    .botones-pago {
+        flex-direction: column;
+    }
+}
 </style>
 </head>
 
 <body>
 
 <header>
-    <h1>SISTEMA DE VENTAS</h1>
+    <div class="logo-titulo">
+        <img 
+            src="https://yt3.googleusercontent.com/ytc/AIdro_k-fPS9Xt75ReX2p3TPb8kFAOml2N-cvmj7p1e1Q8w05xc=s900-c-k-c0x00ffffff-no-rj" 
+            class="logo-colegio"
+        >
+
+        <div>
+            <h1>SISTEMA DE VENTAS</h1>
+            <div class="subtitulo">Gestión de libros e inventario</div>
+        </div>
+    </div>
 
     <div class="usuario">
-        Usuario: {{ usuario }}
+        <span>Usuario: <strong>{{ usuario }}</strong></span>
 
         <a href="/ventas" class="btn-link btn-ventas">Ventas</a>
 
@@ -176,7 +315,7 @@ tr:nth-child(even) {
             <a href="/inventario" class="btn-link btn-inventario">Inventario</a>
         {% endif %}
 
-        <a href="/logout" class="btn-link">Cerrar sesión</a>
+        <a href="/logout" class="btn-link btn-salir">Cerrar sesión</a>
     </div>
 </header>
 
@@ -240,35 +379,50 @@ tr:nth-child(even) {
 <div class="card">
     <h2>Carrito</h2>
 
-    <table>
-        <tr>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Precio</th>
-            <th>Cant.</th>
-            <th>Total</th>
-            <th></th>
-        </tr>
+    <div class="tabla-scroll">
+        <table>
+            <tr>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Cant.</th>
+                <th>Total</th>
+                <th></th>
+            </tr>
 
-        {% for item in carrito %}
-        <tr>
-            <td>{{ item["codigo"] }}</td>
-            <td>{{ item["nombre"] }}</td>
-            <td>S/ {{ item["precio"] }}</td>
-            <td>{{ item["cantidad"] }}</td>
-            <td>S/ {{ item["subtotal"] }}</td>
-            <td>
-                <a href="/eliminar/{{ loop.index0 }}" class="btn-eliminar">X</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+            {% for item in carrito %}
+            <tr>
+                <td>{{ item["codigo"] }}</td>
+                <td>{{ item["nombre"] }}</td>
+                <td>S/ {{ item["precio"] }}</td>
+                <td>{{ item["cantidad"] }}</td>
+                <td>S/ {{ item["subtotal"] }}</td>
+                <td>
+                    <a href="/eliminar/{{ loop.index0 }}" class="btn-eliminar">X</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
 
     <div class="total">Total: S/ {{ total }}</div>
 
     <div class="botones-pago">
-        <a href="/finalizar/efectivo" class="btn-finalizar">Efectivo</a>
-        <a href="/finalizar/yape" class="btn-yape">Yape</a>
+        <a href="/finalizar/efectivo" class="btn-finalizar">
+            <img 
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpKpYi_kDW8xo1uHPEOnX76bBZunAU03OUiw&s"
+                class="icono-pago"
+            >
+            Efectivo
+        </a>
+
+        <a href="/finalizar/yape" class="btn-yape">
+            <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/0/08/Icono_de_la_aplicaci%C3%B3n_Yape.png"
+                class="icono-pago"
+            >
+            Yape
+        </a>
     </div>
 </div>
 
@@ -277,7 +431,7 @@ tr:nth-child(even) {
 <div class="card inventario">
     <h2>Inventario</h2>
 
-    <div style="overflow-x:auto;">
+    <div class="tabla-scroll">
         {{ tabla | safe }}
     </div>
 </div>
