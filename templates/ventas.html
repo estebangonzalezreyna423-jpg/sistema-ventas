@@ -151,13 +151,29 @@ tr:hover {
 
 .total {
     background: rgba(15, 23, 42, 0.75);
-    padding: 18px;
+    padding: 20px 18px;
     border-radius: 14px;
     border: 1px solid rgba(148, 163, 184, 0.2);
     font-size: 17px;
     font-weight: bold;
     color: #f8fafc;
     text-align: center;
+    transition: 0.25s;
+}
+
+.total:hover {
+    transform: translateY(-3px);
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+.total img {
+    width: 46px;
+    height: 46px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 10px auto;
+    border-radius: 10px;
 }
 
 .total span {
@@ -256,20 +272,25 @@ tr:hover {
         </div>
 
         <div class="resumen">
+
             <div class="total">
+                <img src="https://cdn-icons-png.freepik.com/512/17988/17988752.png" alt="Total vendido">
                 Total vendido
                 <span>S/ {{ total | default(0) }}</span>
             </div>
 
             <div class="total">
+                <img src="https://en.numista.com/catalogue/photos/perou/623b66a7eb09f9.66336699-original.jpg" alt="Total efectivo">
                 Total efectivo
                 <span>S/ {{ total_efectivo | default(0) }}</span>
             </div>
 
             <div class="total">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Icono_de_la_aplicaci%C3%B3n_Yape.png" alt="Total Yape">
                 Total Yape
                 <span>S/ {{ total_yape | default(0) }}</span>
             </div>
+
         </div>
 
     </div>
