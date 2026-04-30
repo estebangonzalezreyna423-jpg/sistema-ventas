@@ -3,14 +3,17 @@
 <head>
     <title>Sistema de Ventas</title>
 
-    <!-- FUENTE MODERNA -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: 'Poppins', sans-serif;
     margin: 0;
-    background: #1f2937; /* 🔥 fondo oscuro elegante */
+    background: #1f2937;
     color: #e5e7eb;
 }
 
@@ -44,7 +47,6 @@ header h1 {
     font-size: 20px;
 }
 
-/* BOTONES HEADER */
 .usuario {
     display: flex;
     gap: 8px;
@@ -53,7 +55,7 @@ header h1 {
 
 .btn-link {
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: 8px;
     text-decoration: none;
     color: white;
     font-size: 13px;
@@ -77,39 +79,70 @@ header h1 {
 
 /* CARDS */
 .card {
-    background: #374151; /* 🔥 gris oscuro */
-    padding: 20px;
-    border-radius: 10px;
+    background: #374151;
+    padding: 22px;
+    border-radius: 14px;
     border: 1px solid #4b5563;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.18);
 }
 
-/* INPUTS */
+.card h2 {
+    margin-top: 0;
+    font-weight: 600;
+}
+
+/* INPUTS PRO */
 input, select {
     width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 6px;
+    padding: 13px 15px;
+    margin-bottom: 13px;
+    border-radius: 12px;
     border: 1px solid #4b5563;
-    background: #1f2937;
-    color: white;
+    background: #111827;
+    color: #e5e7eb;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    transition: all 0.2s ease;
 }
 
 input::placeholder {
     color: #9ca3af;
 }
 
+input:hover, select:hover {
+    border-color: #6b7280;
+    background: #0f172a;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #60a5fa;
+    background: #020617;
+    box-shadow: 0 0 0 4px rgba(96,165,250,0.18);
+}
+
+/* BUSCADOR */
 .buscador-google {
-    border-radius: 25px;
-    padding: 12px;
+    border-radius: 30px;
+    padding: 15px 18px;
+    font-size: 15px;
+    border: 1px solid #334155;
+    background: #020617;
+}
+
+.buscador-google:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 12px rgba(96,165,250,0.35);
 }
 
 /* BOTONES */
 button {
-    padding: 10px;
+    padding: 12px;
     border: none;
-    border-radius: 6px;
+    border-radius: 10px;
     cursor: pointer;
-    font-weight: 500;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
 }
 
 .btn-agregar {
@@ -122,13 +155,14 @@ button {
     width: 100%;
     background: #1e3a8a;
     color: white;
+    margin-bottom: 12px;
 }
 
 .btn-eliminar {
     background: #ef4444;
     color: white;
-    padding: 5px 8px;
-    border-radius: 6px;
+    padding: 6px 9px;
+    border-radius: 7px;
     text-decoration: none;
 }
 
@@ -141,12 +175,12 @@ table {
 th {
     background: #111827;
     color: white;
-    padding: 8px;
+    padding: 9px;
     font-size: 13px;
 }
 
 td {
-    padding: 8px;
+    padding: 9px;
     text-align: center;
     border-bottom: 1px solid #4b5563;
 }
@@ -173,8 +207,8 @@ tr:nth-child(even) {
 .btn-finalizar,
 .btn-yape {
     flex: 1;
-    padding: 12px;
-    border-radius: 8px;
+    padding: 13px;
+    border-radius: 10px;
     text-decoration: none;
     font-weight: 600;
     display: flex;
@@ -194,23 +228,29 @@ tr:nth-child(even) {
     color: white;
 }
 
-/* ICONOS MÁS VISIBLES */
 .icono-pago {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     object-fit: contain;
     background: white;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 4px;
 }
 
 /* INVENTARIO */
 .inventario {
     margin-top: 20px;
+    overflow-x: auto;
 }
 
 /* RESPONSIVE */
 @media (max-width: 900px) {
+    header {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+
     .grid {
         grid-template-columns: 1fr;
     }
@@ -292,9 +332,9 @@ tr:nth-child(even) {
         <tr>
             <td>{{ item.codigo }}</td>
             <td>{{ item.nombre }}</td>
-            <td>{{ item.precio }}</td>
+            <td>S/ {{ item.precio }}</td>
             <td>{{ item.cantidad }}</td>
-            <td>{{ item.subtotal }}</td>
+            <td>S/ {{ item.subtotal }}</td>
             <td><a href="/eliminar/{{ loop.index0 }}" class="btn-eliminar">X</a></td>
         </tr>
         {% endfor %}
