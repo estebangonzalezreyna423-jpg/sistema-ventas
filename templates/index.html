@@ -6,9 +6,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <style>
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     font-family: 'Poppins', sans-serif;
@@ -65,9 +63,7 @@ header h1 {
 .btn-inventario { background: #10b981; }
 .btn-salir { background: #ef4444; }
 
-.container {
-    padding: 25px;
-}
+.container { padding: 25px; }
 
 .grid {
     display: grid;
@@ -101,9 +97,7 @@ input, select {
     transition: all 0.2s ease;
 }
 
-input::placeholder {
-    color: #9ca3af;
-}
+input::placeholder { color: #9ca3af; }
 
 input:hover, select:hover {
     border-color: #6b7280;
@@ -117,6 +111,10 @@ input:focus, select:focus {
     box-shadow: 0 0 0 4px rgba(96,165,250,0.18);
 }
 
+.buscador-wrap {
+    position: relative;
+}
+
 .buscador-google {
     border-radius: 30px;
     padding: 15px 18px;
@@ -128,6 +126,33 @@ input:focus, select:focus {
 .buscador-google:focus {
     border-color: #60a5fa;
     box-shadow: 0 0 12px rgba(96,165,250,0.35);
+}
+
+.sugerencias-box {
+    display: none;
+    position: absolute;
+    top: 58px;
+    left: 0;
+    right: 0;
+    background: #111827;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    max-height: 230px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 12px 25px rgba(0,0,0,0.35);
+}
+
+.sugerencia-item {
+    padding: 11px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 1px solid #1f2937;
+    color: #e5e7eb;
+}
+
+.sugerencia-item:hover {
+    background: #1e3a8a;
 }
 
 button {
@@ -178,9 +203,7 @@ td {
     border-bottom: 1px solid #4b5563;
 }
 
-tr:nth-child(even) {
-    background: #1f2937;
-}
+tr:nth-child(even) { background: #1f2937; }
 
 .total {
     font-size: 18px;
@@ -298,21 +321,19 @@ tr:nth-child(even) {
     </form>
 
     <form action="/agregar" method="post">
-        <input 
-            class="buscador-google" 
-            type="text" 
-            name="codigo" 
-            placeholder="Buscar libro..." 
-            list="lista_sugerencias"
-            autocomplete="off"
-            required
-        >
+        <div class="buscador-wrap">
+            <input 
+                id="buscadorLibro"
+                class="buscador-google" 
+                type="text" 
+                name="codigo" 
+                placeholder="Buscar libro..." 
+                autocomplete="off"
+                required
+            >
 
-        <datalist id="lista_sugerencias">
-            {% for s in sugerencias %}
-                <option value="{{ s }}">
-            {% endfor %}
-        </datalist>
+            <div id="sugerenciasBox" class="sugerencias-box"></div>
+        </div>
 
         <input type="number" name="cantidad" placeholder="Cantidad" min="1" required>
         <button class="btn-agregar">Agregar</button>
@@ -368,6 +389,52 @@ tr:nth-child(even) {
 </div>
 
 </div>
+
+<script>
+const sugerencias = {{ sugerencias | tojson }};
+const input = document.getElementById("buscadorLibro");
+const box = document.getElementById("sugerenciasBox");
+
+input.addEventListener("input", function () {
+    const texto = this.value.toLowerCase().trim();
+    box.innerHTML = "";
+
+    if (texto.length === 0) {
+        box.style.display = "none";
+        return;
+    }
+
+    const filtradas = sugerencias
+        .filter(item => item.toLowerCase().includes(texto))
+        .slice(0, 7);
+
+    if (filtradas.length === 0) {
+        box.style.display = "none";
+        return;
+    }
+
+    filtradas.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "sugerencia-item";
+        div.textContent = item;
+
+        div.onclick = function () {
+            input.value = item;
+            box.style.display = "none";
+        };
+
+        box.appendChild(div);
+    });
+
+    box.style.display = "block";
+});
+
+document.addEventListener("click", function(e) {
+    if (!e.target.closest(".buscador-wrap")) {
+        box.style.display = "none";
+    }
+});
+</script>
 
 </body>
 </html>
