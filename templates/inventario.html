@@ -5,21 +5,122 @@
 <title>Inventario</title>
 
 <style>
-/* TODO TU CSS ORIGINAL + ESTO */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #e5e7eb;
+    min-height: 100vh;
+}
+
+/* HEADER */
+header {
+    background: rgba(15, 23, 42, 0.95);
+    color: white;
+    padding: 18px 35px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* LAYOUT */
+.container {
+    padding: 30px;
+}
+
+.card {
+    background: rgba(30, 41, 59, 0.92);
+    padding: 25px;
+    border-radius: 18px;
+    margin-bottom: 20px;
+}
+
+/* BOTONES */
+.btn {
+    padding: 10px 15px;
+    border-radius: 10px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-toggle { background: #f59e0b; }
+.btn-editar { background: #16a34a; }
+.btn-agregar { background: #2563eb; }
+.btn-eliminar { background: #dc2626; }
+
+.btn-volver { background: #2563eb; }
+.btn-excel { background: #22c55e; }
+
+/* INPUTS */
+input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: white;
+}
+
+/* GRID */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.hidden { display: none; }
+
+/* TABLA */
+.tabla-scroll {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #0f172a;
+    color: white;
+    padding: 10px;
+}
+
+td {
+    padding: 10px;
+    text-align: center;
+}
+
+tr:nth-child(even) {
+    background: #1e293b;
+}
+
+/* BUSCADOR */
 .sugerencias-box {
     background: #0f172a;
     border: 1px solid #334155;
     border-radius: 10px;
     max-height: 200px;
     overflow-y: auto;
-    margin-top: -8px;
-    margin-bottom: 10px;
 }
 
 .sugerencia {
     padding: 10px;
     cursor: pointer;
-    border-bottom: 1px solid #1e293b;
 }
 
 .sugerencia:hover {
@@ -44,8 +145,8 @@ function toggle(id) {
 
     <div class="header-actions">
         <span>Usuario: {{ usuario }}</span>
-        <a href="/" class="btn-volver">⬅ Volver</a>
-        <a href="/descargar_inventario" class="btn-excel">Descargar Excel</a>
+        <a href="/" class="btn btn-volver">Volver</a>
+        <a href="/descargar_inventario" class="btn btn-excel">Excel</a>
     </div>
 </header>
 
@@ -54,17 +155,8 @@ function toggle(id) {
 <div class="card">
 
 {% if usuario == "PC1" %}
-
-<button class="btn btn-toggle" onclick="toggle('formEditar')">
-    Editar Stock
-</button>
-
-<button class="btn btn-toggle" onclick="toggle('formAgregar')">
-    Agregar / Eliminar Libro
-</button>
-
-{% else %}
-<p class="aviso">Solo PC1 puede modificar inventario</p>
+<button class="btn btn-toggle" onclick="toggle('formEditar')">Editar Stock</button>
+<button class="btn btn-toggle" onclick="toggle('formAgregar')">Agregar / Eliminar</button>
 {% endif %}
 
 </div>
@@ -72,21 +164,20 @@ function toggle(id) {
 <!-- EDITAR -->
 <div id="formEditar" class="card hidden">
 
-<h2>Editar Stock / Precio</h2>
+<h2>Editar Stock</h2>
 
 <form method="POST" action="/inventario/actualizar">
 
-    <!-- BUSCADOR -->
-    <input type="text" id="busquedaLibro" placeholder="Buscar libro por nombre o código">
+<input type="text" id="busquedaLibro" placeholder="Buscar libro...">
+<input type="hidden" name="codigo" id="codigoSeleccionado">
 
-    <input type="hidden" name="codigo" id="codigoSeleccionado">
+<div id="sugerencias" class="sugerencias-box"></div>
 
-    <div id="sugerencias" class="sugerencias-box"></div>
+<input type="number" name="stock" placeholder="Nuevo stock">
+<input type="number" name="precio" placeholder="Nuevo precio">
 
-    <input type="number" name="stock" placeholder="Nuevo stock">
-    <input type="number" name="precio" placeholder="Nuevo precio">
+<button class="btn btn-editar">Actualizar</button>
 
-    <button type="submit" class="btn btn-editar">Actualizar</button>
 </form>
 
 </div>
@@ -99,44 +190,41 @@ function toggle(id) {
 <form method="POST" action="/inventario/agregar">
 
 <div class="form-grid">
-    <input type="text" name="codigo" placeholder="Código" required>
-    <input type="text" name="nombre" placeholder="Nombre del libro" required>
+<input type="text" name="codigo" placeholder="Código">
+<input type="text" name="nombre" placeholder="Nombre">
 
-    <input type="number" name="precio" placeholder="Precio" required>
-    <input type="number" name="stock" placeholder="Stock inicial" required>
+<input type="number" name="precio" placeholder="Precio">
+<input type="number" name="stock" placeholder="Stock">
 
-    <input type="text" name="categoria" placeholder="Categoría">
-    <input type="text" name="editorial" placeholder="Editorial">
+<input type="text" name="categoria" placeholder="Categoría">
+<input type="text" name="editorial" placeholder="Editorial">
 </div>
 
-<button type="submit" class="btn btn-agregar">Agregar Libro</button>
+<button class="btn btn-agregar">Agregar</button>
 
 </form>
 
 <hr>
 
-<h3>Eliminar Libro</h3>
-
 <form method="POST" action="/inventario/eliminar">
-    <input type="text" name="codigo" placeholder="Código del libro" required>
-    <button type="submit" class="btn btn-eliminar">Eliminar Libro</button>
+<input type="text" name="codigo" placeholder="Código">
+<button class="btn btn-eliminar">Eliminar</button>
 </form>
 
 </div>
 
 <!-- TABLA -->
 <div class="card">
-<h2>Lista de productos</h2>
+<h2>Lista</h2>
 
 <div class="tabla-scroll">
-    {{ tabla|safe }}
+{{ tabla|safe }}
 </div>
 
 </div>
 
 </div>
 
-<!-- 🔥 SCRIPT BUSCADOR -->
 <script>
 const libros = {{ libros_inventario | tojson }};
 const input = document.getElementById("busquedaLibro");
@@ -144,24 +232,24 @@ const box = document.getElementById("sugerencias");
 const codigoInput = document.getElementById("codigoSeleccionado");
 
 input.addEventListener("input", () => {
-    const valor = input.value.toLowerCase();
+    const v = input.value.toLowerCase();
     box.innerHTML = "";
 
-    if (valor.length < 2) return;
+    if (v.length < 2) return;
 
-    const resultados = libros.filter(l =>
-        l.codigo.toLowerCase().includes(valor) ||
-        l.nombre.toLowerCase().includes(valor)
+    const r = libros.filter(l =>
+        l.codigo.toLowerCase().includes(v) ||
+        l.nombre.toLowerCase().includes(v)
     );
 
-    resultados.slice(0, 10).forEach(libro => {
+    r.slice(0,10).forEach(l => {
         const div = document.createElement("div");
-        div.classList.add("sugerencia");
-        div.textContent = `${libro.codigo} - ${libro.nombre}`;
+        div.className = "sugerencia";
+        div.textContent = l.codigo + " - " + l.nombre;
 
         div.onclick = () => {
-            input.value = libro.nombre;
-            codigoInput.value = libro.codigo;
+            input.value = l.nombre;
+            codigoInput.value = l.codigo;
             box.innerHTML = "";
         };
 
