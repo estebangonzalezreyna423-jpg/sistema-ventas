@@ -17,7 +17,6 @@ body {
     color: #e5e7eb;
 }
 
-/* HEADER */
 header {
     background: #111827;
     color: white;
@@ -66,7 +65,6 @@ header h1 {
 .btn-inventario { background: #10b981; }
 .btn-salir { background: #ef4444; }
 
-/* LAYOUT */
 .container {
     padding: 25px;
 }
@@ -77,7 +75,6 @@ header h1 {
     gap: 20px;
 }
 
-/* CARDS */
 .card {
     background: #374151;
     padding: 22px;
@@ -91,7 +88,6 @@ header h1 {
     font-weight: 600;
 }
 
-/* INPUTS PRO */
 input, select {
     width: 100%;
     padding: 13px 15px;
@@ -121,7 +117,6 @@ input:focus, select:focus {
     box-shadow: 0 0 0 4px rgba(96,165,250,0.18);
 }
 
-/* BUSCADOR */
 .buscador-google {
     border-radius: 30px;
     padding: 15px 18px;
@@ -135,7 +130,6 @@ input:focus, select:focus {
     box-shadow: 0 0 12px rgba(96,165,250,0.35);
 }
 
-/* BOTONES */
 button {
     padding: 12px;
     border: none;
@@ -166,7 +160,6 @@ button {
     text-decoration: none;
 }
 
-/* TABLA */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -189,7 +182,6 @@ tr:nth-child(even) {
     background: #1f2937;
 }
 
-/* TOTAL */
 .total {
     font-size: 18px;
     margin-top: 12px;
@@ -197,7 +189,6 @@ tr:nth-child(even) {
     text-align: right;
 }
 
-/* BOTONES DE PAGO */
 .botones-pago {
     display: flex;
     gap: 12px;
@@ -237,13 +228,11 @@ tr:nth-child(even) {
     padding: 4px;
 }
 
-/* INVENTARIO */
 .inventario {
     margin-top: 20px;
     overflow-x: auto;
 }
 
-/* RESPONSIVE */
 @media (max-width: 900px) {
     header {
         flex-direction: column;
@@ -309,8 +298,23 @@ tr:nth-child(even) {
     </form>
 
     <form action="/agregar" method="post">
-        <input class="buscador-google" type="text" name="codigo" placeholder="Buscar libro..." required>
-        <input type="number" name="cantidad" placeholder="Cantidad" required>
+        <input 
+            class="buscador-google" 
+            type="text" 
+            name="codigo" 
+            placeholder="Buscar libro..." 
+            list="lista_sugerencias"
+            autocomplete="off"
+            required
+        >
+
+        <datalist id="lista_sugerencias">
+            {% for s in sugerencias %}
+                <option value="{{ s }}">
+            {% endfor %}
+        </datalist>
+
+        <input type="number" name="cantidad" placeholder="Cantidad" min="1" required>
         <button class="btn-agregar">Agregar</button>
     </form>
 </div>
