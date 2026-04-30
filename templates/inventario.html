@@ -1,242 +1,29 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Inventario</title>
+<meta charset="UTF-8">
+<title>Inventario</title>
 
 <style>
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    color: #e5e7eb;
-    min-height: 100vh;
-}
-
-/* HEADER */
-header {
-    background: rgba(15, 23, 42, 0.95);
-    color: white;
-    padding: 18px 35px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.35);
-}
-
-header h1 {
-    margin: 0;
-    font-size: 26px;
-    letter-spacing: 1px;
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-/* LAYOUT */
-.container {
-    padding: 30px;
-}
-
-.card {
-    background: rgba(30, 41, 59, 0.92);
-    padding: 25px;
-    border-radius: 18px;
-    margin-bottom: 20px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.35);
-    border: 1px solid rgba(148, 163, 184, 0.25);
-}
-
-.card h2,
-.card h3 {
-    margin-top: 0;
-    color: #f8fafc;
-}
-
-/* BOTONES */
-.btn,
-.btn-excel,
-.btn-volver {
-    padding: 10px 15px;
-    border: none;
+/* TODO TU CSS ORIGINAL + ESTO */
+.sugerencias-box {
+    background: #0f172a;
+    border: 1px solid #334155;
     border-radius: 10px;
-    cursor: pointer;
-    color: white;
-    text-decoration: none;
-    font-weight: 600;
-    display: inline-block;
-    transition: 0.25s;
-}
-
-.btn:hover,
-.btn-excel:hover,
-.btn-volver:hover {
-    transform: translateY(-2px);
-    filter: brightness(1.1);
-}
-
-.btn-agregar {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    margin-top: 10px;
-}
-
-.btn-editar {
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    margin-top: 10px;
-}
-
-.btn-eliminar {
-    background: linear-gradient(135deg, #dc2626, #991b1b);
-    margin-top: 10px;
-}
-
-.btn-toggle {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    margin-right: 10px;
-    margin-top: 8px;
-}
-
-.btn-excel {
-    background: linear-gradient(135deg, #22c55e, #15803d);
-}
-
-.btn-volver {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-}
-
-/* INPUTS */
-input {
-    width: 100%;
-    padding: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: -8px;
     margin-bottom: 10px;
-    border-radius: 11px;
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    background: rgba(15, 23, 42, 0.8);
-    color: #f8fafc;
-    outline: none;
-    transition: 0.25s;
 }
 
-input::placeholder {
-    color: #94a3b8;
+.sugerencia {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #1e293b;
 }
 
-input:focus {
-    border-color: #38bdf8;
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
-}
-
-/* FORMULARIOS */
-.form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-.hidden {
-    display: none;
-}
-
-hr {
-    border: none;
-    border-top: 1px solid rgba(148, 163, 184, 0.25);
-    margin: 22px 0;
-}
-
-.aviso {
-    background: rgba(220, 38, 38, 0.15);
-    border: 1px solid rgba(248, 113, 113, 0.35);
-    color: #fecaca;
-    padding: 14px;
-    border-radius: 12px;
-    margin: 0;
-}
-
-/* TABLA */
-.tabla-scroll {
-    overflow-x: auto;
-    border-radius: 14px;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-}
-
-/* Estilo para tabla generada por pandas */
-.tabla-scroll table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 850px;
-}
-
-.tabla-scroll th {
-    background: #0f172a !important;
-    color: #f8fafc !important;
-    padding: 13px 10px !important;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.tabla-scroll td {
-    padding: 12px 10px !important;
-    text-align: center;
-    color: #e5e7eb !important;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.15) !important;
-}
-
-.tabla-scroll tr {
-    background: rgba(15, 23, 42, 0.35) !important;
-}
-
-.tabla-scroll tr:nth-child(even) {
-    background: rgba(51, 65, 85, 0.45) !important;
-}
-
-.tabla-scroll tr:hover {
-    background: rgba(37, 99, 235, 0.18) !important;
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-    header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-        padding: 18px;
-    }
-
-    .container {
-        padding: 18px;
-    }
-
-    .card {
-        padding: 18px;
-    }
-
-    .header-actions {
-        justify-content: center;
-    }
-
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .btn-toggle {
-        width: 100%;
-        margin-right: 0;
-        margin-bottom: 8px;
-    }
-
-    header h1 {
-        font-size: 23px;
-    }
+.sugerencia:hover {
+    background: #1e293b;
 }
 </style>
 
@@ -244,7 +31,6 @@ hr {
 function toggle(id) {
     document.getElementById("formEditar").classList.add("hidden");
     document.getElementById("formAgregar").classList.add("hidden");
-
     document.getElementById(id).classList.remove("hidden");
 }
 </script>
@@ -258,93 +44,131 @@ function toggle(id) {
 
     <div class="header-actions">
         <span>Usuario: {{ usuario }}</span>
-
         <a href="/" class="btn-volver">⬅ Volver</a>
-
-        <a href="/descargar_inventario" class="btn-excel">
-            Descargar Excel
-        </a>
+        <a href="/descargar_inventario" class="btn-excel">Descargar Excel</a>
     </div>
 </header>
 
 <div class="container">
 
-    <div class="card">
+<div class="card">
 
-        {% if usuario == "PC1" %}
+{% if usuario == "PC1" %}
 
-        <button class="btn btn-toggle" onclick="toggle('formEditar')">
-            Editar Stock
-        </button>
+<button class="btn btn-toggle" onclick="toggle('formEditar')">
+    Editar Stock
+</button>
 
-        <button class="btn btn-toggle" onclick="toggle('formAgregar')">
-            Agregar / Eliminar Libro
-        </button>
+<button class="btn btn-toggle" onclick="toggle('formAgregar')">
+    Agregar / Eliminar Libro
+</button>
 
-        {% else %}
-            <p class="aviso">Solo PC1 puede modificar inventario</p>
-        {% endif %}
-
-    </div>
-
-    <!-- EDITAR -->
-    <div id="formEditar" class="card hidden">
-
-        <h2>Editar Stock / Precio</h2>
-
-        <form method="POST" action="/inventario/actualizar">
-
-            <input type="text" name="codigo" placeholder="Código del libro" required>
-            <input type="number" name="stock" placeholder="Nuevo stock">
-            <input type="number" name="precio" placeholder="Nuevo precio">
-
-            <button type="submit" class="btn btn-editar">Actualizar</button>
-        </form>
-
-    </div>
-
-    <!-- AGREGAR / ELIMINAR -->
-    <div id="formAgregar" class="card hidden">
-
-        <h2>Agregar Libro</h2>
-
-        <form method="POST" action="/inventario/agregar">
-
-            <div class="form-grid">
-                <input type="text" name="codigo" placeholder="Código" required>
-                <input type="text" name="nombre" placeholder="Nombre del libro" required>
-
-                <input type="number" name="precio" placeholder="Precio" required>
-                <input type="number" name="stock" placeholder="Stock inicial" required>
-
-                <input type="text" name="categoria" placeholder="Categoría">
-                <input type="text" name="editorial" placeholder="Editorial">
-            </div>
-
-            <button type="submit" class="btn btn-agregar">Agregar Libro</button>
-        </form>
-
-        <hr>
-
-        <h3>Eliminar Libro</h3>
-
-        <form method="POST" action="/inventario/eliminar">
-            <input type="text" name="codigo" placeholder="Código del libro" required>
-            <button type="submit" class="btn btn-eliminar">Eliminar Libro</button>
-        </form>
-
-    </div>
-
-    <!-- TABLA -->
-    <div class="card">
-        <h2>Lista de productos</h2>
-
-        <div class="tabla-scroll">
-            {{ tabla|safe }}
-        </div>
-    </div>
+{% else %}
+<p class="aviso">Solo PC1 puede modificar inventario</p>
+{% endif %}
 
 </div>
+
+<!-- EDITAR -->
+<div id="formEditar" class="card hidden">
+
+<h2>Editar Stock / Precio</h2>
+
+<form method="POST" action="/inventario/actualizar">
+
+    <!-- BUSCADOR -->
+    <input type="text" id="busquedaLibro" placeholder="Buscar libro por nombre o código">
+
+    <input type="hidden" name="codigo" id="codigoSeleccionado">
+
+    <div id="sugerencias" class="sugerencias-box"></div>
+
+    <input type="number" name="stock" placeholder="Nuevo stock">
+    <input type="number" name="precio" placeholder="Nuevo precio">
+
+    <button type="submit" class="btn btn-editar">Actualizar</button>
+</form>
+
+</div>
+
+<!-- AGREGAR -->
+<div id="formAgregar" class="card hidden">
+
+<h2>Agregar Libro</h2>
+
+<form method="POST" action="/inventario/agregar">
+
+<div class="form-grid">
+    <input type="text" name="codigo" placeholder="Código" required>
+    <input type="text" name="nombre" placeholder="Nombre del libro" required>
+
+    <input type="number" name="precio" placeholder="Precio" required>
+    <input type="number" name="stock" placeholder="Stock inicial" required>
+
+    <input type="text" name="categoria" placeholder="Categoría">
+    <input type="text" name="editorial" placeholder="Editorial">
+</div>
+
+<button type="submit" class="btn btn-agregar">Agregar Libro</button>
+
+</form>
+
+<hr>
+
+<h3>Eliminar Libro</h3>
+
+<form method="POST" action="/inventario/eliminar">
+    <input type="text" name="codigo" placeholder="Código del libro" required>
+    <button type="submit" class="btn btn-eliminar">Eliminar Libro</button>
+</form>
+
+</div>
+
+<!-- TABLA -->
+<div class="card">
+<h2>Lista de productos</h2>
+
+<div class="tabla-scroll">
+    {{ tabla|safe }}
+</div>
+
+</div>
+
+</div>
+
+<!-- 🔥 SCRIPT BUSCADOR -->
+<script>
+const libros = {{ libros_inventario | tojson }};
+const input = document.getElementById("busquedaLibro");
+const box = document.getElementById("sugerencias");
+const codigoInput = document.getElementById("codigoSeleccionado");
+
+input.addEventListener("input", () => {
+    const valor = input.value.toLowerCase();
+    box.innerHTML = "";
+
+    if (valor.length < 2) return;
+
+    const resultados = libros.filter(l =>
+        l.codigo.toLowerCase().includes(valor) ||
+        l.nombre.toLowerCase().includes(valor)
+    );
+
+    resultados.slice(0, 10).forEach(libro => {
+        const div = document.createElement("div");
+        div.classList.add("sugerencia");
+        div.textContent = `${libro.codigo} - ${libro.nombre}`;
+
+        div.onclick = () => {
+            input.value = libro.nombre;
+            codigoInput.value = libro.codigo;
+            box.innerHTML = "";
+        };
+
+        box.appendChild(div);
+    });
+});
+</script>
 
 </body>
 </html>
