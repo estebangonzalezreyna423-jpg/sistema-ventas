@@ -80,6 +80,15 @@ def hora_peru():
     return datetime.now(ZoneInfo("America/Lima")).replace(tzinfo=None)
 
 
+def numero(valor, tipo=float):
+    try:
+        if valor in [None, ""]:
+            return 0
+        return tipo(valor)
+    except:
+        return 0
+
+
 def cargar_excel():
     columnas = [
         "CODIGO","NOMBRE DEL PRODUCTO","EDITORIAL","CATEGORIA",
@@ -106,6 +115,90 @@ def cargar_excel():
 
 def guardar_excel(df):
     df.to_excel(ARCHIVO, index=False)
+
+
+# =============================
+# MIGRAR EXCEL A POSTGRESQL
+# =============================
+@app.route("/migrar_inventario")
+def migrar_inventario():
+    if login_requerido():
+        return redirect("/login")
+
+    if session.get("user") != "PC1":
+        return redirect("/")
+
+    conn = get_conn()
+    if not conn:
+        return "No hay conexión a la base de datos."
+
+    df = cargar_excel()
+    cur = conn.cursor()
+
+    migrados = 0
+    actualizados = 0
+    errores = 0
+
+    for _, row in df.iterrows():
+        try:
+            codigo = limpiar(row["CODIGO"])
+            nombre = str(row["NOMBRE DEL PRODUCTO"]).strip()
+
+            if not codigo or not nombre:
+                continue
+
+            editorial = str(row["EDITORIAL"]).strip()
+            categoria = str(row["CATEGORIA"]).strip()
+            compras = numero(row["COMPRAS"], int)
+            ventas = numero(row["VENTAS"], int)
+            stock = numero(row["STOCK"], int)
+            costo = numero(row["COSTO UNITARIO"], float)
+            precio = numero(row["PRECIO DE VENTA"], float)
+            utilidad = numero(row["UTILIDAD PROD"], float)
+            valor = numero(row["VALOR DEL INVENTARIO"], float)
+
+            cur.execute("""
+                INSERT INTO inventario (
+                    codigo, nombre, editorial, categoria,
+                    compras, ventas, stock,
+                    costo_unitario, precio_venta,
+                    utilidad_prod, valor_inventario
+                )
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                ON CONFLICT (codigo) DO UPDATE SET
+                    nombre = EXCLUDED.nombre,
+                    editorial = EXCLUDED.editorial,
+                    categoria = EXCLUDED.categoria,
+                    compras = EXCLUDED.compras,
+                    ventas = EXCLUDED.ventas,
+                    stock = EXCLUDED.stock,
+                    costo_unitario = EXCLUDED.costo_unitario,
+                    precio_venta = EXCLUDED.precio_venta,
+                    utilidad_prod = EXCLUDED.utilidad_prod,
+                    valor_inventario = EXCLUDED.valor_inventario
+            """, (
+                codigo, nombre, editorial, categoria,
+                compras, ventas, stock,
+                costo, precio, utilidad, valor
+            ))
+
+            if cur.rowcount:
+                migrados += 1
+
+        except Exception as e:
+            print("ERROR MIGRANDO FILA:", e)
+            errores += 1
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return f"""
+    <h2>Migración completada</h2>
+    <p>Productos procesados: {migrados}</p>
+    <p>Errores: {errores}</p>
+    <a href="/">Volver al sistema</a>
+    """
 
 
 def aplicar_filtros(df):
