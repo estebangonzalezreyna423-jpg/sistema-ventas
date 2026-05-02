@@ -14,7 +14,6 @@ body {
     color: #e5e7eb;
 }
 
-/* HEADER */
 header {
     background:
         radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 32%),
@@ -61,7 +60,6 @@ header h1::after {
     font-weight: 600;
 }
 
-/* LAYOUT */
 .container { padding: 30px; }
 
 .card {
@@ -73,7 +71,6 @@ header h1::after {
     box-shadow: 0 18px 40px rgba(0,0,0,0.28);
 }
 
-/* PANEL PROFESIONAL */
 .panel-acciones {
     display: flex;
     justify-content: space-between;
@@ -103,7 +100,6 @@ header h1::after {
     flex-wrap: wrap;
 }
 
-/* BOTONES */
 .btn {
     padding: 12px 16px;
     border-radius: 12px;
@@ -131,7 +127,6 @@ header h1::after {
 .btn-volver { background: #2563eb; }
 .btn-excel { background: #22c55e; }
 
-/* INPUTS */
 input {
     width: 100%;
     padding: 12px;
@@ -142,7 +137,6 @@ input {
     color: white;
 }
 
-/* GRID */
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -151,7 +145,6 @@ input {
 
 .hidden { display: none; }
 
-/* TABLA */
 .tabla-scroll { overflow-x: auto; }
 
 table { width: 100%; border-collapse: collapse; }
@@ -169,13 +162,13 @@ td {
 
 tr:nth-child(even) { background: #1e293b; }
 
-/* BUSCADOR */
 .sugerencias-box {
     background: #0f172a;
     border: 1px solid #334155;
     border-radius: 10px;
     max-height: 200px;
     overflow-y: auto;
+    margin-bottom: 10px;
 }
 
 .sugerencia {
@@ -185,6 +178,33 @@ tr:nth-child(even) { background: #1e293b; }
 
 .sugerencia:hover {
     background: #1e293b;
+}
+
+.info-libro {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    padding: 15px;
+    margin: 10px 0 15px 0;
+}
+
+.info-libro h3 {
+    margin: 0 0 10px 0;
+    color: #38bdf8;
+}
+
+.info-libro p {
+    margin: 6px 0;
+}
+
+.alerta-stock {
+    color: #fecaca;
+    background: rgba(220, 38, 38, 0.25);
+    border: 1px solid rgba(248, 113, 113, 0.5);
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: bold;
+    margin-top: 10px;
 }
 
 @media (max-width: 768px) {
@@ -252,7 +272,6 @@ function toggle(id) {
         </div>
     </div>
 
-    <!-- EDITAR -->
     <div id="formEditar" class="card hidden">
 
         <h2>Editar Stock</h2>
@@ -264,6 +283,13 @@ function toggle(id) {
 
             <div id="sugerencias" class="sugerencias-box"></div>
 
+            <div id="infoLibro" class="info-libro hidden">
+                <h3 id="infoNombre"></h3>
+                <p><b>Stock actual:</b> <span id="infoStock"></span></p>
+                <p><b>Precio actual:</b> S/ <span id="infoPrecio"></span></p>
+                <p id="alertaStock" class="alerta-stock hidden">⚠ Stock bajo: queda 1 unidad o menos</p>
+            </div>
+
             <input type="number" name="stock" placeholder="Nuevo stock">
             <input type="number" name="precio" placeholder="Nuevo precio">
 
@@ -273,7 +299,6 @@ function toggle(id) {
 
     </div>
 
-    <!-- AGREGAR -->
     <div id="formAgregar" class="card hidden">
 
         <h2>Agregar Libro</h2>
@@ -309,7 +334,6 @@ function toggle(id) {
 
     </div>
 
-    <!-- TABLA -->
     <div class="card">
         <h2>Lista</h2>
 
@@ -324,7 +348,6 @@ function toggle(id) {
 <script>
 const libros = {{ libros_inventario | tojson }};
 
-/* EDITAR */
 const input = document.getElementById("busquedaLibro");
 const box = document.getElementById("sugerencias");
 const codigoInput = document.getElementById("codigoSeleccionado");
@@ -348,13 +371,25 @@ input.addEventListener("input", () => {
             input.value = l.nombre;
             codigoInput.value = l.codigo;
             box.innerHTML = "";
+
+            document.getElementById("infoLibro").classList.remove("hidden");
+            document.getElementById("infoNombre").textContent = l.codigo + " - " + l.nombre;
+            document.getElementById("infoStock").textContent = l.stock;
+            document.getElementById("infoPrecio").textContent = Number(l.precio).toFixed(2);
+
+            const alerta = document.getElementById("alertaStock");
+
+            if (Number(l.stock) <= 1) {
+                alerta.classList.remove("hidden");
+            } else {
+                alerta.classList.add("hidden");
+            }
         };
 
         box.appendChild(div);
     });
 });
 
-/* ELIMINAR */
 const inputE = document.getElementById("busquedaEliminar");
 const boxE = document.getElementById("sugerenciasEliminar");
 

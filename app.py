@@ -297,7 +297,9 @@ def inventario():
     for _, row in df_original.iterrows():
         libros_inventario.append({
             "codigo": str(row["CODIGO"]).strip(),
-            "nombre": str(row["NOMBRE DEL PRODUCTO"]).strip()
+            "nombre": str(row["NOMBRE DEL PRODUCTO"]).strip(),
+            "stock": int(row["STOCK"] or 0),
+            "precio": float(row["COSTO UNITARIO"] or 0)
         })
 
     return render_template(
