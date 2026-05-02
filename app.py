@@ -32,6 +32,7 @@ def init_db():
         return
 
     cur = conn.cursor()
+
     cur.execute("""
         CREATE TABLE IF NOT EXISTS ventas (
             id SERIAL PRIMARY KEY,
@@ -44,6 +45,24 @@ def init_db():
             fecha TIMESTAMP
         )
     """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS inventario (
+            id SERIAL PRIMARY KEY,
+            codigo TEXT UNIQUE,
+            nombre TEXT,
+            editorial TEXT,
+            categoria TEXT,
+            compras INT DEFAULT 0,
+            ventas INT DEFAULT 0,
+            stock INT DEFAULT 0,
+            costo_unitario FLOAT DEFAULT 0,
+            precio_venta FLOAT DEFAULT 0,
+            utilidad_prod FLOAT DEFAULT 0,
+            valor_inventario FLOAT DEFAULT 0
+        )
+    """)
+
     conn.commit()
     cur.close()
     conn.close()
