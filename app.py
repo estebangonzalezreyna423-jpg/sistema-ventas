@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, send_file
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import os
 import psycopg2
@@ -12,9 +12,10 @@ app.secret_key = os.environ.get("SECRET_KEY", "clave_super_segura_123")
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 USUARIOS = {
-    "PC1": "123",
-    "PC2": "123",
-    "PC3": "123"
+    "admin": {"password": "Gladis26", "rol": "admin"},
+    "oficina1": {"password": "Cepas1", "rol": "oficina"},
+    "oficina2": {"password": "Cepas2", "rol": "oficina"},
+    "biblioteca": {"password": "Biblioteca26", "rol": "biblioteca"}
 }
 
 def get_conn():
@@ -75,6 +76,10 @@ def limpiar(valor):
 
 def login_requerido():
     return "user" not in session
+
+
+def es_admin():
+    return session.get("rol") == "admin"
 
 
 def hora_peru():
@@ -226,11 +231,12 @@ def buscar_producto(busqueda):
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        user = limpiar(request.form.get("usuario"))
+        user = request.form.get("usuario", "").strip().lower()
         password = request.form.get("password")
 
-        if user in USUARIOS and USUARIOS[user] == password:
+        if user in USUARIOS and USUARIOS[user]["password"] == password:
             session["user"] = user
+            session["rol"] = USUARIOS[user]["rol"]
             session["carrito"] = []
             return redirect("/")
 
@@ -264,6 +270,7 @@ def index():
         carrito=carrito,
         total=round(total, 2),
         usuario=session.get("user"),
+        rol=session.get("rol"),
         editoriales=editoriales,
         categorias=categorias,
         sugerencias=sugerencias,
@@ -277,7 +284,7 @@ def inventario():
     if login_requerido():
         return redirect("/login")
 
-    if session.get("user") != "PC1":
+    if not es_admin():
         return redirect("/")
 
     df_original = cargar_excel()
@@ -297,6 +304,7 @@ def inventario():
         "inventario.html",
         tabla=df.to_html(index=False, classes="tabla"),
         usuario=session.get("user"),
+        rol=session.get("rol"),
         editoriales=editoriales,
         categorias=categorias,
         sugerencias=sugerencias,
@@ -310,6 +318,9 @@ def inventario():
 def descargar_inventario():
     if login_requerido():
         return redirect("/login")
+
+    if not es_admin():
+        return redirect("/")
 
     df = cargar_excel()
 
@@ -330,7 +341,7 @@ def agregar_producto():
     if login_requerido():
         return redirect("/login")
 
-    if session.get("user") != "PC1":
+    if not es_admin():
         return redirect("/")
 
     codigo = limpiar(request.form.get("codigo"))
@@ -407,7 +418,7 @@ def actualizar_producto():
     if login_requerido():
         return redirect("/login")
 
-    if session.get("user") != "PC1":
+    if not es_admin():
         return redirect("/")
 
     busqueda = limpiar(request.form.get("codigo"))
@@ -501,7 +512,7 @@ def eliminar_producto():
     if login_requerido():
         return redirect("/login")
 
-    if session.get("user") != "PC1":
+    if not es_admin():
         return redirect("/")
 
     busqueda = limpiar(request.form.get("codigo"))
@@ -552,6 +563,11 @@ def agregar():
     if not item:
         return redirect("/")
 
+    stock_actual = numero(item["stock"], int)
+
+    if cantidad > stock_actual:
+        return redirect("/")
+
     precio = numero(item["costo_unitario"], float)
 
     carrito.append({
@@ -568,6 +584,9 @@ def agregar():
 
 @app.route("/finalizar/<metodo>")
 def finalizar(metodo):
+    if login_requerido():
+        return redirect("/login")
+
     carrito = session.get("carrito", [])
 
     if not carrito:
@@ -593,22 +612,29 @@ def finalizar(metodo):
 
             producto = cur.fetchone()
 
-            if producto:
-                stock_actual = producto[0] or 0
-                ventas_actuales = producto[1] or 0
-                costo = producto[2] or 0
+            if not producto:
+                conn.rollback()
+                return redirect("/")
 
-                nuevo_stock = max(0, stock_actual - cantidad)
-                nuevas_ventas = ventas_actuales + cantidad
-                nuevo_valor = nuevo_stock * costo
+            stock_actual = producto[0] or 0
+            ventas_actuales = producto[1] or 0
+            costo = producto[2] or 0
 
-                cur.execute("""
-                    UPDATE inventario
-                    SET stock = %s,
-                        ventas = %s,
-                        valor_inventario = %s
-                    WHERE UPPER(codigo) = %s
-                """, (nuevo_stock, nuevas_ventas, nuevo_valor, codigo))
+            if cantidad > stock_actual:
+                conn.rollback()
+                return redirect("/")
+
+            nuevo_stock = stock_actual - cantidad
+            nuevas_ventas = ventas_actuales + cantidad
+            nuevo_valor = nuevo_stock * costo
+
+            cur.execute("""
+                UPDATE inventario
+                SET stock = %s,
+                    ventas = %s,
+                    valor_inventario = %s
+                WHERE UPPER(codigo) = %s
+            """, (nuevo_stock, nuevas_ventas, nuevo_valor, codigo))
 
             cur.execute("""
                 INSERT INTO ventas (usuario, codigo, nombre, cantidad, subtotal, metodo, fecha)
@@ -637,39 +663,99 @@ def finalizar(metodo):
     return redirect("/")
 
 
+def obtener_ventas_filtradas():
+    conn = get_conn()
+
+    if not conn:
+        return pd.DataFrame()
+
+    inicio = request.args.get("inicio")
+    fin = request.args.get("fin")
+    usuario = request.args.get("usuario")
+    metodo = request.args.get("metodo")
+
+    query = "SELECT * FROM ventas WHERE 1=1"
+    params = []
+
+    if inicio:
+        query += " AND fecha >= %s"
+        params.append(inicio)
+
+    if fin:
+        try:
+            fin_dt = datetime.strptime(fin, "%Y-%m-%d") + timedelta(days=1)
+            query += " AND fecha < %s"
+            params.append(fin_dt.strftime("%Y-%m-%d"))
+        except:
+            pass
+
+    if usuario:
+        query += " AND UPPER(usuario) = %s"
+        params.append(usuario.upper())
+
+    if metodo:
+        query += " AND UPPER(metodo) = %s"
+        params.append(metodo.upper())
+
+    query += " ORDER BY fecha DESC"
+
+    df = pd.read_sql(query, conn, params=params)
+    conn.close()
+
+    return df
+
+
 @app.route("/ventas")
 def ventas():
     if login_requerido():
         return redirect("/login")
 
-    conn = get_conn()
+    df = obtener_ventas_filtradas()
 
-    if not conn:
+    if df.empty:
         return render_template(
             "ventas.html",
             ventas=[],
             total=0,
             total_efectivo=0,
             total_yape=0,
-            usuario=session.get("user")
+            cantidad_ventas=0,
+            productos_vendidos=0,
+            ticket_promedio=0,
+            producto_top="Sin datos",
+            vendedor_top="Sin datos",
+            usuario=session.get("user"),
+            rol=session.get("rol"),
+            inicio=request.args.get("inicio", ""),
+            fin=request.args.get("fin", ""),
+            filtro_usuario=request.args.get("usuario", ""),
+            filtro_metodo=request.args.get("metodo", "")
         )
 
-    df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
-    conn.close()
-
     df.columns = df.columns.str.lower()
+    df["subtotal"] = pd.to_numeric(df["subtotal"], errors="coerce").fillna(0)
+    df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce").fillna(0)
+    df["metodo"] = df["metodo"].astype(str).str.upper()
 
-    if df.empty:
-        total = 0
-        total_efectivo = 0
-        total_yape = 0
-    else:
-        df["subtotal"] = pd.to_numeric(df["subtotal"], errors="coerce").fillna(0)
-        df["metodo"] = df["metodo"].astype(str).str.upper()
+    total = df["subtotal"].sum()
+    total_efectivo = df[df["metodo"] == "EFECTIVO"]["subtotal"].sum()
+    total_yape = df[df["metodo"] == "YAPE"]["subtotal"].sum()
+    cantidad_ventas = len(df)
+    productos_vendidos = int(df["cantidad"].sum())
+    ticket_promedio = total / cantidad_ventas if cantidad_ventas > 0 else 0
 
-        total = df["subtotal"].sum()
-        total_efectivo = df[df["metodo"] == "EFECTIVO"]["subtotal"].sum()
-        total_yape = df[df["metodo"] == "YAPE"]["subtotal"].sum()
+    producto_top = "Sin datos"
+    vendedor_top = "Sin datos"
+
+    try:
+        producto_top = df.groupby("nombre")["cantidad"].sum().sort_values(ascending=False).index[0]
+    except:
+        pass
+
+    try:
+        vendedor_top = df.groupby("usuario")["subtotal"].sum().sort_values(ascending=False).index[0]
+    except:
+        pass
 
     return render_template(
         "ventas.html",
@@ -677,7 +763,36 @@ def ventas():
         total=round(total, 2),
         total_efectivo=round(total_efectivo, 2),
         total_yape=round(total_yape, 2),
-        usuario=session.get("user")
+        cantidad_ventas=cantidad_ventas,
+        productos_vendidos=productos_vendidos,
+        ticket_promedio=round(ticket_promedio, 2),
+        producto_top=producto_top,
+        vendedor_top=vendedor_top,
+        usuario=session.get("user"),
+        rol=session.get("rol"),
+        inicio=request.args.get("inicio", ""),
+        fin=request.args.get("fin", ""),
+        filtro_usuario=request.args.get("usuario", ""),
+        filtro_metodo=request.args.get("metodo", "")
+    )
+
+
+@app.route("/descargar_ventas")
+def descargar_ventas():
+    if login_requerido():
+        return redirect("/login")
+
+    df = obtener_ventas_filtradas()
+
+    archivo = BytesIO()
+    df.to_excel(archivo, index=False)
+    archivo.seek(0)
+
+    return send_file(
+        archivo,
+        as_attachment=True,
+        download_name="ventas.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
 
@@ -686,7 +801,7 @@ def eliminar_venta(id):
     if login_requerido():
         return redirect("/login")
 
-    if session.get("user") != "PC1":
+    if not es_admin():
         return redirect("/ventas")
 
     conn = get_conn()
