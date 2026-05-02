@@ -244,11 +244,10 @@ function toggle(id) {
     </div>
 
     <div class="acciones-botones">
-        {% if usuario == "PC1" %}
-        <button class="btn btn-toggle" onclick="toggle('formEditar')"> Editar Stock</button>
-        <button class="btn btn-toggle" onclick="toggle('formAgregar')"> Agregar / Eliminar</button>
-        {% endif %}
-    </div>
+    {% if rol == "admin" %}
+        <button class="btn btn-toggle" onclick="toggle('formEditar')">Editar Stock</button>
+        <button class="btn btn-toggle" onclick="toggle('formAgregar')">Agregar / Eliminar</button>
+    {% endif %}
 </div>
 
 <!-- EDITAR -->
