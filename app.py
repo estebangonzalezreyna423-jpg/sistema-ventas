@@ -736,6 +736,12 @@ def ventas():
     df["subtotal"] = pd.to_numeric(df["subtotal"], errors="coerce").fillna(0)
     df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce").fillna(0)
     df["metodo"] = df["metodo"].astype(str).str.upper()
+# Formatear fecha sin microsegundos
+df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce").dt.strftime("%Y-%m-%d %H:%M:%S")
+
+# Crear numeración de ventas (1, 2, 3...)
+df = df.reset_index(drop=True)
+df.insert(0, "numero_venta", range(1, len(df) + 1))
 
     total = df["subtotal"].sum()
     total_efectivo = df[df["metodo"] == "EFECTIVO"]["subtotal"].sum()
