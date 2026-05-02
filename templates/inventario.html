@@ -60,6 +60,7 @@ header h1::after {
     color: #e5e7eb;
     font-weight: 600;
 }
+
 /* LAYOUT */
 .container { padding: 30px; }
 
@@ -237,85 +238,86 @@ function toggle(id) {
 
 <div class="container">
 
-<div class="card panel-acciones">
-    <div>
-        <h2>Gestión de inventario</h2>
-        <p>Administra el stock, precios y libros registrados en el sistema.</p>
+    <div class="card panel-acciones">
+        <div>
+            <h2>Gestión de inventario</h2>
+            <p>Administra el stock, precios y libros registrados en el sistema.</p>
+        </div>
+
+        <div class="acciones-botones">
+            {% if rol == "admin" %}
+                <button class="btn btn-toggle" onclick="toggle('formEditar')">Editar Stock</button>
+                <button class="btn btn-toggle" onclick="toggle('formAgregar')">Agregar / Eliminar</button>
+            {% endif %}
+        </div>
     </div>
 
-    <div class="acciones-botones">
-    {% if rol == "admin" %}
-        <button class="btn btn-toggle" onclick="toggle('formEditar')">Editar Stock</button>
-        <button class="btn btn-toggle" onclick="toggle('formAgregar')">Agregar / Eliminar</button>
-    {% endif %}
-</div>
+    <!-- EDITAR -->
+    <div id="formEditar" class="card hidden">
 
-<!-- EDITAR -->
-<div id="formEditar" class="card hidden">
+        <h2>Editar Stock</h2>
 
-<h2>Editar Stock</h2>
+        <form method="POST" action="/inventario/actualizar">
 
-<form method="POST" action="/inventario/actualizar">
+            <input type="text" id="busquedaLibro" placeholder="Buscar libro...">
+            <input type="hidden" name="codigo" id="codigoSeleccionado">
 
-<input type="text" id="busquedaLibro" placeholder="Buscar libro...">
-<input type="hidden" name="codigo" id="codigoSeleccionado">
+            <div id="sugerencias" class="sugerencias-box"></div>
 
-<div id="sugerencias" class="sugerencias-box"></div>
+            <input type="number" name="stock" placeholder="Nuevo stock">
+            <input type="number" name="precio" placeholder="Nuevo precio">
 
-<input type="number" name="stock" placeholder="Nuevo stock">
-<input type="number" name="precio" placeholder="Nuevo precio">
+            <button class="btn btn-editar">Actualizar</button>
 
-<button class="btn btn-editar">Actualizar</button>
+        </form>
 
-</form>
+    </div>
 
-</div>
+    <!-- AGREGAR -->
+    <div id="formAgregar" class="card hidden">
 
-<!-- AGREGAR -->
-<div id="formAgregar" class="card hidden">
+        <h2>Agregar Libro</h2>
 
-<h2>Agregar Libro</h2>
+        <form method="POST" action="/inventario/agregar">
 
-<form method="POST" action="/inventario/agregar">
+            <div class="form-grid">
+                <input type="text" name="codigo" placeholder="Código">
+                <input type="text" name="nombre" placeholder="Nombre">
 
-<div class="form-grid">
-<input type="text" name="codigo" placeholder="Código">
-<input type="text" name="nombre" placeholder="Nombre">
+                <input type="number" name="precio" placeholder="Precio">
+                <input type="number" name="stock" placeholder="Stock">
 
-<input type="number" name="precio" placeholder="Precio">
-<input type="number" name="stock" placeholder="Stock">
+                <input type="text" name="categoria" placeholder="Categoría">
+                <input type="text" name="editorial" placeholder="Editorial">
+            </div>
 
-<input type="text" name="categoria" placeholder="Categoría">
-<input type="text" name="editorial" placeholder="Editorial">
-</div>
+            <button class="btn btn-agregar">Agregar</button>
 
-<button class="btn btn-agregar">Agregar</button>
+        </form>
 
-</form>
+        <hr>
 
-<hr>
+        <form method="POST" action="/inventario/eliminar">
 
-<form method="POST" action="/inventario/eliminar">
+            <input type="text" id="busquedaEliminar" name="codigo" placeholder="Buscar libro...">
 
-<input type="text" id="busquedaEliminar" name="codigo" placeholder="Buscar libro...">
+            <div id="sugerenciasEliminar" class="sugerencias-box"></div>
 
-<div id="sugerenciasEliminar" class="sugerencias-box"></div>
+            <button class="btn btn-eliminar">Eliminar</button>
 
-<button class="btn btn-eliminar">Eliminar</button>
+        </form>
 
-</form>
+    </div>
 
-</div>
+    <!-- TABLA -->
+    <div class="card">
+        <h2>Lista</h2>
 
-<!-- TABLA -->
-<div class="card">
-<h2>Lista</h2>
+        <div class="tabla-scroll">
+            {{ tabla|safe }}
+        </div>
 
-<div class="tabla-scroll">
-{{ tabla|safe }}
-</div>
-
-</div>
+    </div>
 
 </div>
 

@@ -333,7 +333,7 @@ tr:nth-child(even) { background: #1f2937; }
 
         <a href="/ventas" class="btn-link btn-ventas">Ventas</a>
 
-        {% if usuario == "PC1" %}
+        {% if rol == "admin" %}
             <a href="/inventario" class="btn-link btn-inventario">Inventario</a>
         {% endif %}
 
@@ -429,10 +429,12 @@ tr:nth-child(even) { background: #1f2937; }
 
 </div>
 
+{% if rol == "admin" %}
 <div class="card inventario">
     <h2>Inventario</h2>
     {{ tabla | safe }}
 </div>
+{% endif %}
 
 </div>
 
