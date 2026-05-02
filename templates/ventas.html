@@ -17,7 +17,6 @@ body {
     min-height: 100vh;
 }
 
-/* HEADER */
 header {
     background: rgba(15, 23, 42, 0.95);
     color: white;
@@ -38,9 +37,9 @@ header h1 {
 .header-actions {
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
-/* LAYOUT */
 .container {
     padding: 30px;
 }
@@ -51,6 +50,7 @@ header h1 {
     border-radius: 18px;
     box-shadow: 0 15px 35px rgba(0,0,0,0.35);
     border: 1px solid rgba(148, 163, 184, 0.25);
+    margin-bottom: 20px;
 }
 
 .card h2 {
@@ -60,7 +60,6 @@ header h1 {
     margin-bottom: 20px;
 }
 
-/* BOTONES */
 .btn {
     padding: 10px 15px;
     border-radius: 10px;
@@ -69,6 +68,8 @@ header h1 {
     font-weight: 600;
     transition: 0.25s;
     display: inline-block;
+    border: none;
+    cursor: pointer;
 }
 
 .btn-back {
@@ -77,6 +78,14 @@ header h1 {
 
 .btn-download {
     background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
+.btn-filter {
+    background: linear-gradient(135deg, #0ea5e9, #0369a1);
+}
+
+.btn-clear {
+    background: linear-gradient(135deg, #64748b, #334155);
 }
 
 .btn:hover {
@@ -100,7 +109,73 @@ header h1 {
     filter: brightness(1.15);
 }
 
-/* TABLA */
+.filtros {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr) auto auto;
+    gap: 12px;
+    align-items: end;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    color: #cbd5e1;
+    margin-bottom: 6px;
+}
+
+input, select {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #0f172a;
+    color: #e5e7eb;
+    outline: none;
+}
+
+input:focus, select:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 3px rgba(56,189,248,0.18);
+}
+
+.resumen {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.total {
+    background: rgba(15, 23, 42, 0.75);
+    padding: 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    font-size: 15px;
+    font-weight: bold;
+    color: #f8fafc;
+    text-align: center;
+    transition: 0.25s;
+}
+
+.total:hover {
+    transform: translateY(-3px);
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+.total span {
+    display: block;
+    margin-top: 8px;
+    font-size: 22px;
+    color: #38bdf8;
+}
+
+.total small {
+    display: block;
+    margin-top: 5px;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
 .tabla-scroll {
     overflow-x: auto;
     border-radius: 14px;
@@ -110,7 +185,7 @@ header h1 {
 table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 900px;
+    min-width: 950px;
 }
 
 th {
@@ -141,49 +216,35 @@ tr:hover {
     background: rgba(37, 99, 235, 0.18);
 }
 
-/* RESUMEN */
-.resumen {
-    margin-top: 22px;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-}
-
-.total {
-    background: rgba(15, 23, 42, 0.75);
-    padding: 20px 18px;
-    border-radius: 14px;
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    font-size: 17px;
+.badge {
+    padding: 5px 9px;
+    border-radius: 999px;
+    font-size: 12px;
     font-weight: bold;
-    color: #f8fafc;
-    text-align: center;
-    transition: 0.25s;
 }
 
-.total:hover {
-    transform: translateY(-3px);
-    border-color: rgba(56, 189, 248, 0.5);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+.badge-yape {
+    background: rgba(109, 40, 217, 0.25);
+    color: #c4b5fd;
+    border: 1px solid rgba(196,181,253,0.35);
 }
 
-.total img {
-    width: 46px;
-    height: 46px;
-    object-fit: contain;
-    display: block;
-    margin: 0 auto 10px auto;
-    border-radius: 10px;
+.badge-efectivo {
+    background: rgba(22, 163, 74, 0.25);
+    color: #86efac;
+    border: 1px solid rgba(134,239,172,0.35);
 }
 
-.total span {
-    display: block;
-    margin-top: 8px;
-    font-size: 22px;
-    color: #38bdf8;
+@media (max-width: 1050px) {
+    .filtros {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .resumen {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
-/* RESPONSIVE */
 @media (max-width: 768px) {
     header {
         flex-direction: column;
@@ -201,9 +262,11 @@ tr:hover {
     }
 
     .header-actions {
-        width: 100%;
         justify-content: center;
-        flex-wrap: wrap;
+    }
+
+    .filtros {
+        grid-template-columns: 1fr;
     }
 
     .resumen {
@@ -215,7 +278,6 @@ tr:hover {
     }
 }
 </style>
-
 </head>
 
 <body>
@@ -225,14 +287,105 @@ tr:hover {
 
     <div class="header-actions">
         <a href="/" class="btn btn-back">⬅ Volver</a>
-        <a href="/descargar_ventas" class="btn btn-download">Descargar Excel</a>
+        <a href="/descargar_ventas?inicio={{ inicio }}&fin={{ fin }}&usuario={{ filtro_usuario }}&metodo={{ filtro_metodo }}" class="btn btn-download">Descargar Excel</a>
     </div>
 </header>
 
 <div class="container">
 
     <div class="card">
+        <h2>Filtros de ventas</h2>
 
+        <form method="GET" action="/ventas" class="filtros">
+            <div class="form-group">
+                <label>Desde</label>
+                <input type="date" name="inicio" value="{{ inicio }}">
+            </div>
+
+            <div class="form-group">
+                <label>Hasta</label>
+                <input type="date" name="fin" value="{{ fin }}">
+            </div>
+
+            <div class="form-group">
+                <label>Usuario</label>
+                <select name="usuario">
+                    <option value="">Todos</option>
+                    <option value="PC1" {% if filtro_usuario == "PC1" %}selected{% endif %}>PC1</option>
+                    <option value="PC2" {% if filtro_usuario == "PC2" %}selected{% endif %}>PC2</option>
+                    <option value="PC3" {% if filtro_usuario == "PC3" %}selected{% endif %}>PC3</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Método</label>
+                <select name="metodo">
+                    <option value="">Todos</option>
+                    <option value="EFECTIVO" {% if filtro_metodo == "EFECTIVO" %}selected{% endif %}>Efectivo</option>
+                    <option value="YAPE" {% if filtro_metodo == "YAPE" %}selected{% endif %}>Yape</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-filter">Filtrar</button>
+            <a href="/ventas" class="btn btn-clear">Limpiar</a>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Resumen / Dashboard</h2>
+
+        <div class="resumen">
+            <div class="total">
+                Total vendido
+                <span>S/ {{ total | default(0) }}</span>
+                <small>Ingresos filtrados</small>
+            </div>
+
+            <div class="total">
+                Total efectivo
+                <span>S/ {{ total_efectivo | default(0) }}</span>
+                <small>Pagos en efectivo</small>
+            </div>
+
+            <div class="total">
+                Total Yape
+                <span>S/ {{ total_yape | default(0) }}</span>
+                <small>Pagos por Yape</small>
+            </div>
+
+            <div class="total">
+                Ventas realizadas
+                <span>{{ cantidad_ventas | default(0) }}</span>
+                <small>Registros encontrados</small>
+            </div>
+
+            <div class="total">
+                Productos vendidos
+                <span>{{ productos_vendidos | default(0) }}</span>
+                <small>Unidades totales</small>
+            </div>
+
+            <div class="total">
+                Ticket promedio
+                <span>S/ {{ ticket_promedio | default(0) }}</span>
+                <small>Promedio por venta</small>
+            </div>
+
+            <div class="total">
+                Producto más vendido
+                <span style="font-size:16px;">{{ producto_top | default("Sin datos") }}</span>
+                <small>Según cantidad</small>
+            </div>
+
+            <div class="total">
+                Mejor vendedor
+                <span style="font-size:16px;">{{ vendedor_top | default("Sin datos") }}</span>
+                <small>Según monto vendido</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
         <h2>Registro de ventas</h2>
 
         <div class="tabla-scroll">
@@ -246,7 +399,9 @@ tr:hover {
                     <th>Total</th>
                     <th>Método</th>
                     <th>Fecha</th>
+                    {% if rol == "admin" %}
                     <th>Acción</th>
+                    {% endif %}
                 </tr>
 
                 {% for v in ventas %}
@@ -257,8 +412,18 @@ tr:hover {
                     <td>{{ v["nombre"] }}</td>
                     <td>{{ v["cantidad"] }}</td>
                     <td>S/ {{ v["subtotal"] }}</td>
-                    <td>{{ v["metodo"] }}</td>
+                    <td>
+                        {% if v["metodo"] == "YAPE" %}
+                            <span class="badge badge-yape">Yape</span>
+                        {% elif v["metodo"] == "EFECTIVO" %}
+                            <span class="badge badge-efectivo">Efectivo</span>
+                        {% else %}
+                            {{ v["metodo"] }}
+                        {% endif %}
+                    </td>
                     <td>{{ v["fecha"] }}</td>
+
+                    {% if rol == "admin" %}
                     <td>
                         <a href="/ventas/eliminar/{{ v['id'] }}"
                            class="btn-delete"
@@ -266,33 +431,11 @@ tr:hover {
                            X
                         </a>
                     </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </table>
         </div>
-
-        <div class="resumen">
-
-            <div class="total">
-                <img src="https://cdn-icons-png.freepik.com/512/17988/17988752.png" alt="Total vendido">
-                Total vendido
-                <span>S/ {{ total | default(0) }}</span>
-            </div>
-
-            <div class="total">
-                <img src="https://en.numista.com/catalogue/photos/perou/623b66a7eb09f9.66336699-original.jpg" alt="Total efectivo">
-                Total efectivo
-                <span>S/ {{ total_efectivo | default(0) }}</span>
-            </div>
-
-            <div class="total">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Icono_de_la_aplicaci%C3%B3n_Yape.png" alt="Total Yape">
-                Total Yape
-                <span>S/ {{ total_yape | default(0) }}</span>
-            </div>
-
-        </div>
-
     </div>
 
 </div>
