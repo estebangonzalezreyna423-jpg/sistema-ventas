@@ -213,6 +213,7 @@ def inventario():
     editoriales = []
     categorias = []
     sugerencias = []
+    libros_inventario = []
 
     if not df.empty:
         if "editorial" in df.columns:
@@ -222,10 +223,18 @@ def inventario():
             categorias = sorted(df["categoria"].dropna().astype(str).unique())
 
         for _, row in df.iterrows():
-            if "codigo" in df.columns:
-                sugerencias.append(str(row["codigo"]))
-            if "nombre" in df.columns:
-                sugerencias.append(str(row["nombre"]))
+            codigo = str(row["codigo"]).strip()
+            nombre = str(row["nombre"]).strip()
+
+            sugerencias.append(codigo)
+            sugerencias.append(nombre)
+
+            libros_inventario.append({
+                "codigo": codigo,
+                "nombre": nombre,
+                "stock": int(row["stock"] or 0),
+                "precio": float(row["costo_unitario"] or 0)
+            })
 
         sugerencias = sorted(list(set(sugerencias)))
         tabla = df.to_html(index=False, classes="tabla")
@@ -237,7 +246,8 @@ def inventario():
         rol=session["rol"],
         editoriales=editoriales,
         categorias=categorias,
-        sugerencias=sugerencias
+        sugerencias=sugerencias,
+        libros_inventario=libros_inventario
     )
 
 @app.route("/eliminar/<int:index>")
