@@ -249,6 +249,196 @@ def inventario():
         sugerencias=sugerencias,
         libros_inventario=libros_inventario
     )
+@app.route("/descargar_inventario")
+def descargar_inventario():
+    if login_requerido():
+        return redirect("/login")
+
+    if not es_admin():
+        return redirect("/")
+
+    df = cargar_excel()
+
+    archivo = BytesIO()
+    df.to_excel(archivo, index=False)
+    archivo.seek(0)
+
+    return send_file(
+        archivo,
+        as_attachment=True,
+        download_name="inventario.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+@app.route("/inventario/agregar", methods=["POST"])
+def agregar_producto():
+    if login_requerido():
+        return redirect("/login")
+
+    if not es_admin():
+        return redirect("/")
+
+    codigo = limpiar(request.form.get("codigo"))
+    nombre = request.form.get("nombre", "").strip()
+    editorial = request.form.get("editorial", "").strip()
+    categoria = request.form.get("categoria", "").strip()
+    stock = numero(request.form.get("stock"), int)
+    precio = numero(request.form.get("precio"), float)
+
+    if not codigo or not nombre:
+        return redirect("/inventario")
+
+    utilidad = 0
+    valor = stock * precio
+
+    conn = get_conn()
+    if not conn:
+        return redirect("/inventario")
+
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""
+            INSERT INTO inventario (
+                codigo, nombre, editorial, categoria,
+                compras, ventas, stock,
+                costo_unitario, precio_venta,
+                utilidad_prod, valor_inventario
+            )
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            ON CONFLICT (codigo) DO UPDATE SET
+                nombre = EXCLUDED.nombre,
+                editorial = EXCLUDED.editorial,
+                categoria = EXCLUDED.categoria,
+                stock = EXCLUDED.stock,
+                costo_unitario = EXCLUDED.costo_unitario,
+                precio_venta = EXCLUDED.precio_venta,
+                valor_inventario = EXCLUDED.valor_inventario
+        """, (
+            codigo, nombre, editorial, categoria,
+            stock, 0, stock,
+            precio, precio,
+            utilidad, valor
+        ))
+
+        conn.commit()
+
+    except Exception as e:
+        print("ERROR AGREGANDO PRODUCTO:", e)
+        conn.rollback()
+
+    finally:
+        cur.close()
+        conn.close()
+
+    return redirect("/inventario")
+
+
+@app.route("/inventario/actualizar", methods=["POST"])
+def actualizar_producto():
+    if login_requerido():
+        return redirect("/login")
+
+    if not es_admin():
+        return redirect("/")
+
+    codigo = limpiar(request.form.get("codigo"))
+    nuevo_stock = request.form.get("stock")
+    nuevo_precio = request.form.get("precio")
+
+    if not codigo:
+        return redirect("/inventario")
+
+    conn = get_conn()
+    if not conn:
+        return redirect("/inventario")
+
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""
+            SELECT stock, costo_unitario
+            FROM inventario
+            WHERE UPPER(codigo) = %s
+        """, (codigo,))
+
+        producto = cur.fetchone()
+
+        if not producto:
+            return redirect("/inventario")
+
+        stock_actual = producto[0] or 0
+        precio_actual = producto[1] or 0
+
+        stock_final = numero(nuevo_stock, int) if nuevo_stock not in [None, ""] else stock_actual
+        precio_final = numero(nuevo_precio, float) if nuevo_precio not in [None, ""] else precio_actual
+        valor = stock_final * precio_final
+
+        cur.execute("""
+            UPDATE inventario
+            SET stock = %s,
+                costo_unitario = %s,
+                precio_venta = %s,
+                valor_inventario = %s
+            WHERE UPPER(codigo) = %s
+        """, (
+            stock_final,
+            precio_final,
+            precio_final,
+            valor,
+            codigo
+        ))
+
+        conn.commit()
+
+    except Exception as e:
+        print("ERROR ACTUALIZANDO PRODUCTO:", e)
+        conn.rollback()
+
+    finally:
+        cur.close()
+        conn.close()
+
+    return redirect("/inventario")
+
+
+@app.route("/inventario/eliminar", methods=["POST"])
+def eliminar_producto():
+    if login_requerido():
+        return redirect("/login")
+
+    if not es_admin():
+        return redirect("/")
+
+    codigo = limpiar(request.form.get("codigo"))
+
+    if not codigo:
+        return redirect("/inventario")
+
+    conn = get_conn()
+    if not conn:
+        return redirect("/inventario")
+
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""
+            DELETE FROM inventario
+            WHERE UPPER(codigo) = %s
+        """, (codigo,))
+
+        conn.commit()
+
+    except Exception as e:
+        print("ERROR ELIMINANDO PRODUCTO:", e)
+        conn.rollback()
+
+    finally:
+        cur.close()
+        conn.close()
+
+    return redirect("/inventario")
 
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
