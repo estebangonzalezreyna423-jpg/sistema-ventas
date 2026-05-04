@@ -162,7 +162,7 @@ def logout():
     return redirect("/login")
 
 
-# ================= INDEX =================
+# ================= INDEX (CORREGIDO) =================
 @app.route("/")
 def index():
     if login_requerido():
@@ -171,13 +171,53 @@ def index():
     carrito = session.get("carrito", [])
     total = sum(i["subtotal"] for i in carrito)
 
+    df = cargar_excel()
+
+    editoriales = []
+    categorias = []
+    sugerencias = []
+    tabla = ""
+
+    if not df.empty:
+        if "editorial" in df.columns:
+            editoriales = sorted(df["editorial"].dropna().astype(str).unique())
+
+        if "categoria" in df.columns:
+            categorias = sorted(df["categoria"].dropna().astype(str).unique())
+
+        for _, row in df.iterrows():
+            sugerencias.append(str(row["codigo"]))
+            sugerencias.append(str(row["nombre"]))
+
+        sugerencias = sorted(list(set(sugerencias)))
+        tabla = df.to_html(index=False, classes="tabla")
+
     return render_template(
         "index.html",
         carrito=carrito,
-        total=total,
+        total=round(total, 2),
         usuario=session["user"],
-        rol=session["rol"]
+        rol=session["rol"],
+        editoriales=editoriales,
+        categorias=categorias,
+        sugerencias=sugerencias,
+        tabla=tabla
     )
+
+
+# ================= ELIMINAR DEL CARRITO =================
+@app.route("/eliminar/<int:index>")
+def eliminar(index):
+    if login_requerido():
+        return redirect("/login")
+
+    carrito = session.get("carrito", [])
+
+    if 0 <= index < len(carrito):
+        carrito.pop(index)
+
+    session["carrito"] = carrito
+    return redirect("/")
 
 
 # ================= AGREGAR =================
@@ -210,7 +250,7 @@ def agregar():
     return redirect("/")
 
 
-# ================= FINALIZAR =================
+# ================= FINALIZAR (CON FECHA) =================
 @app.route("/finalizar/<metodo>", methods=["POST"])
 def finalizar(metodo):
     if login_requerido():
@@ -226,7 +266,6 @@ def finalizar(metodo):
 
     cur = conn.cursor()
 
-    # 🔥 NUEVO: FECHA MANUAL
     fecha_manual = request.form.get("fecha_venta")
 
     if fecha_manual:
@@ -242,12 +281,11 @@ def finalizar(metodo):
             codigo = limpiar(item["codigo"])
             cantidad = item["cantidad"]
 
-            cur.execute("SELECT stock, ventas, costo_unitario FROM inventario WHERE UPPER(codigo)=%s", (codigo,))
+            cur.execute("SELECT stock, ventas FROM inventario WHERE UPPER(codigo)=%s", (codigo,))
             prod = cur.fetchone()
 
             stock = prod[0]
             ventas = prod[1]
-            costo = prod[2]
 
             nuevo_stock = stock - cantidad
             nuevas_ventas = ventas + cantidad
