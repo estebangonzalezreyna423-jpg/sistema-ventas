@@ -270,34 +270,48 @@ def finalizar(metodo):
 
     if fecha_manual:
         try:
-            ahora = datetime.strptime(fecha_manual, "%Y-%m-%dT%H:%M")
+            fecha_venta = datetime.strptime(fecha_manual, "%Y-%m-%dT%H:%M")
         except:
-            ahora = hora_peru()
+            fecha_venta = hora_peru()
     else:
-        ahora = hora_peru()
+        fecha_venta = hora_peru()
 
     try:
         for item in carrito:
             codigo = limpiar(item["codigo"])
-            cantidad = item["cantidad"]
+            cantidad = int(item["cantidad"])
 
-            cur.execute("SELECT stock, ventas FROM inventario WHERE UPPER(codigo)=%s", (codigo,))
+            cur.execute("""
+                SELECT stock, ventas
+                FROM inventario
+                WHERE UPPER(codigo) = %s
+            """, (codigo,))
+
             prod = cur.fetchone()
 
-            stock = prod[0]
-            ventas = prod[1]
+            if not prod:
+                conn.rollback()
+                return redirect("/")
 
-            nuevo_stock = stock - cantidad
-            nuevas_ventas = ventas + cantidad
+            stock_actual = prod[0] or 0
+            ventas_actuales = prod[1] or 0
+
+            if cantidad > stock_actual:
+                conn.rollback()
+                return redirect("/")
+
+            nuevo_stock = stock_actual - cantidad
+            nuevas_ventas = ventas_actuales + cantidad
 
             cur.execute("""
                 UPDATE inventario
-                SET stock=%s, ventas=%s
-                WHERE UPPER(codigo)=%s
+                SET stock = %s, ventas = %s
+                WHERE UPPER(codigo) = %s
             """, (nuevo_stock, nuevas_ventas, codigo))
 
             cur.execute("""
-                INSERT INTO ventas (usuario, codigo, nombre, cantidad, subtotal, metodo, fecha)
+                INSERT INTO ventas 
+                (usuario, codigo, nombre, cantidad, subtotal, metodo, fecha)
                 VALUES (%s,%s,%s,%s,%s,%s,%s)
             """, (
                 session["user"],
@@ -306,13 +320,13 @@ def finalizar(metodo):
                 cantidad,
                 item["subtotal"],
                 metodo.upper(),
-                ahora
+                fecha_venta
             ))
 
         conn.commit()
 
     except Exception as e:
-        print("ERROR:", e)
+        print("ERROR GUARDANDO VENTA:", e)
         conn.rollback()
 
     finally:
@@ -320,8 +334,7 @@ def finalizar(metodo):
         conn.close()
 
     session["carrito"] = []
-    return redirect("/")
-
+    return redirect("/ventas")
 
 # ================= VENTAS =================
 @app.route("/ventas")
@@ -330,15 +343,23 @@ def ventas():
         return redirect("/login")
 
     conn = get_conn()
+    if not conn:
+        return redirect("/")
+
     df = pd.read_sql("SELECT * FROM ventas ORDER BY fecha DESC", conn)
     conn.close()
+
+    if not df.empty:
+       df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
+	df["fecha"] = df["fecha"].dt.strftime("%d/%m/%Y %H:%M:%S")
+        df["fecha"] = df["fecha"].dt.strftime("%d/%m/%Y %H:%M:%S")
 
     return render_template(
         "ventas.html",
         ventas=df.to_dict(orient="records"),
-        usuario=session["user"]
+        usuario=session["user"],
+        rol=session["rol"]
     )
-
 
 # ================= INIT =================
 init_db()
