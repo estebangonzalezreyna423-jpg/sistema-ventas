@@ -333,7 +333,7 @@ def finalizar(metodo):
         conn.close()
 
     session["carrito"] = []
-    return redirect("/ventas")
+    return redirect("/")
 
 
 def obtener_ventas_filtradas():
