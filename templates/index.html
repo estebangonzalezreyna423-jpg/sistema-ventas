@@ -443,22 +443,22 @@ tr:nth-child(even) { background: #1f2937; }
 
     <div class="fecha-venta-box">
         <label for="fecha_venta">Fecha de venta</label>
-    	<input type="datetime-local" id="fecha_venta">
-    	<p class="fecha-ayuda">Déjalo vacío si la venta es de hoy.</p>
+        <input type="datetime-local" id="fecha_venta">
+        <p class="fecha-ayuda">Déjalo vacío si la venta es de hoy.</p>
     </div>
 
     <div class="botones-pago">
-        <form id="form-efectivo" method="POST" action="/finalizar/efectivo" class="form-pago">
+        <form id="form-efectivo" method="POST" action="/finalizar/efectivo" class="form-pago" onsubmit="copiarFecha('fecha_efectivo')">
             <input type="hidden" name="fecha_venta" id="fecha_efectivo">
-            <button type="submit" class="btn-finalizar" onclick="copiarFecha('fecha_efectivo')">
+            <button type="submit" class="btn-finalizar">
                 <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpKpYi_kDW8xo1uHPEOnX76bBZunAU03OUiw&s" class="icono-pago">
                 Efectivo
             </button>
         </form>
 
-        <form id="form-yape" method="POST" action="/finalizar/yape" class="form-pago">
+        <form id="form-yape" method="POST" action="/finalizar/yape" class="form-pago" onsubmit="copiarFecha('fecha_yape')">
             <input type="hidden" name="fecha_venta" id="fecha_yape">
-            <button type="submit" class="btn-yape" onclick="copiarFecha('fecha_yape')">
+            <button type="submit" class="btn-yape">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Icono_de_la_aplicaci%C3%B3n_Yape.png" class="icono-pago">
                 Yape
             </button>

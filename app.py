@@ -264,14 +264,16 @@ def finalizar(metodo):
     cur = conn.cursor()
 
     fecha_manual = request.form.get("fecha_venta")
+    print("FECHA RECIBIDA:", fecha_manual)
 
-    if fecha_manual:
-        try:
-            fecha_venta = datetime.strptime(fecha_manual, "%Y-%m-%dT%H:%M")
-        except:
-            fecha_venta = hora_peru()
-    else:
-        fecha_venta = hora_peru()
+    if fecha_manual and fecha_manual.strip() != "":
+       try:
+           fecha_venta = datetime.strptime(fecha_manual, "%Y-%m-%dT%H:%M")
+       except Exception as e:
+           print("ERROR PARSEANDO FECHA:", e)
+           fecha_venta = hora_peru()
+else:
+    fecha_venta = hora_peru()
 
     try:
         for item in carrito:
