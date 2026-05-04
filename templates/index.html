@@ -247,14 +247,42 @@ tr:nth-child(even) { background: #1f2937; }
     text-align: right;
 }
 
+.fecha-venta-box {
+    margin-top: 16px;
+    background: #1f2937;
+    border: 1px solid #4b5563;
+    padding: 15px;
+    border-radius: 14px;
+}
+
+.fecha-venta-box label {
+    display: block;
+    font-size: 13px;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.fecha-ayuda {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: -5px;
+    margin-bottom: 0;
+}
+
 .botones-pago {
     display: flex;
     gap: 12px;
     margin-top: 15px;
 }
 
+.form-pago {
+    flex: 1;
+}
+
 .btn-finalizar,
 .btn-yape {
+    width: 100%;
     flex: 1;
     padding: 13px;
     border-radius: 10px;
@@ -413,16 +441,28 @@ tr:nth-child(even) { background: #1f2937; }
 
     <div class="total">Total: S/ {{ total }}</div>
 
-    <div class="botones-pago">
-        <a href="/finalizar/efectivo" class="btn-finalizar">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpKpYi_kDW8xo1uHPEOnX76bBZunAU03OUiw&s" class="icono-pago">
-            Efectivo
-        </a>
+    <div class="fecha-venta-box">
+        <label for="fecha_venta">Fecha de venta</label>
+        <input type="datetime-local" id="fecha_venta" name="fecha_venta" form="form-efectivo">
+        <p class="fecha-ayuda">Déjalo vacío si la venta es de hoy. Úsalo solo para registrar ventas antiguas.</p>
+    </div>
 
-        <a href="/finalizar/yape" class="btn-yape">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Icono_de_la_aplicaci%C3%B3n_Yape.png" class="icono-pago">
-            Yape
-        </a>
+    <div class="botones-pago">
+        <form id="form-efectivo" method="POST" action="/finalizar/efectivo" class="form-pago">
+            <input type="hidden" name="fecha_venta" id="fecha_efectivo">
+            <button type="submit" class="btn-finalizar" onclick="copiarFecha('fecha_efectivo')">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpKpYi_kDW8xo1uHPEOnX76bBZunAU03OUiw&s" class="icono-pago">
+                Efectivo
+            </button>
+        </form>
+
+        <form id="form-yape" method="POST" action="/finalizar/yape" class="form-pago">
+            <input type="hidden" name="fecha_venta" id="fecha_yape">
+            <button type="submit" class="btn-yape" onclick="copiarFecha('fecha_yape')">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Icono_de_la_aplicaci%C3%B3n_Yape.png" class="icono-pago">
+                Yape
+            </button>
+        </form>
     </div>
 
 </div>
@@ -482,6 +522,11 @@ document.addEventListener("click", function(e) {
         box.style.display = "none";
     }
 });
+
+function copiarFecha(idInputOculto) {
+    const fecha = document.getElementById("fecha_venta").value;
+    document.getElementById(idInputOculto).value = fecha;
+}
 </script>
 
 </body>
