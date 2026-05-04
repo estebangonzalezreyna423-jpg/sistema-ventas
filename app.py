@@ -199,6 +199,46 @@ def index():
         tabla=tabla
     )
 
+@app.route("/inventario")
+def inventario():
+    if login_requerido():
+        return redirect("/login")
+
+    if not es_admin():
+        return redirect("/")
+
+    df = cargar_excel()
+
+    tabla = ""
+    editoriales = []
+    categorias = []
+    sugerencias = []
+
+    if not df.empty:
+        if "editorial" in df.columns:
+            editoriales = sorted(df["editorial"].dropna().astype(str).unique())
+
+        if "categoria" in df.columns:
+            categorias = sorted(df["categoria"].dropna().astype(str).unique())
+
+        for _, row in df.iterrows():
+            if "codigo" in df.columns:
+                sugerencias.append(str(row["codigo"]))
+            if "nombre" in df.columns:
+                sugerencias.append(str(row["nombre"]))
+
+        sugerencias = sorted(list(set(sugerencias)))
+        tabla = df.to_html(index=False, classes="tabla")
+
+    return render_template(
+        "inventario.html",
+        tabla=tabla,
+        usuario=session["user"],
+        rol=session["rol"],
+        editoriales=editoriales,
+        categorias=categorias,
+        sugerencias=sugerencias
+    )
 
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
