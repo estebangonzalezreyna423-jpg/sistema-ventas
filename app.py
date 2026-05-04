@@ -272,8 +272,8 @@ def finalizar(metodo):
        except Exception as e:
            print("ERROR PARSEANDO FECHA:", e)
            fecha_venta = hora_peru()
-else:
-    fecha_venta = hora_peru()
+    else:
+        fecha_venta = hora_peru()
 
     try:
         for item in carrito:
