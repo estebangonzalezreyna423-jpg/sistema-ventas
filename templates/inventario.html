@@ -289,6 +289,23 @@ function toggle(id) {
                 <button class="btn btn-toggle" onclick="toggle('formEditar')">Editar Stock</button>
                 <button class="btn btn-toggle" onclick="toggle('formAgregar')">Agregar / Eliminar</button>
 
+                <form action="/reemplazar_inventario"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      class="form-reemplazar">
+
+                    <input type="file"
+                           name="archivo"
+                           accept=".xlsx"
+                           required
+                           class="input-archivo">
+
+                    <button type="submit"
+                            class="btn btn-eliminar"
+                            onclick="return confirm('¿Seguro que deseas BORRAR TODO el inventario actual y subir el nuevo Excel?');">
+                        ⚠ Reemplazar Inventario
+                    </button>
+                </form>
             {% endif %}
         </div>
     </div>
