@@ -98,6 +98,7 @@ header h1::after {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .btn {
@@ -135,6 +136,19 @@ input {
     border: 1px solid #334155;
     background: #0f172a;
     color: white;
+}
+
+.input-archivo {
+    width: auto;
+    margin: 0;
+    max-width: 260px;
+}
+
+.form-reemplazar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .form-grid {
@@ -225,8 +239,14 @@ tr:nth-child(even) { background: #1e293b; }
     }
 
     .acciones-botones,
-    .acciones-botones .btn {
+    .acciones-botones .btn,
+    .form-reemplazar {
         width: 100%;
+    }
+
+    .input-archivo {
+        width: 100%;
+        max-width: 100%;
     }
 
     .form-grid {
@@ -268,6 +288,24 @@ function toggle(id) {
             {% if rol == "admin" %}
                 <button class="btn btn-toggle" onclick="toggle('formEditar')">Editar Stock</button>
                 <button class="btn btn-toggle" onclick="toggle('formAgregar')">Agregar / Eliminar</button>
+
+                <form action="/reemplazar_inventario"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      class="form-reemplazar">
+
+                    <input type="file"
+                           name="archivo"
+                           accept=".xlsx"
+                           required
+                           class="input-archivo">
+
+                    <button type="submit"
+                            class="btn btn-eliminar"
+                            onclick="return confirm('¿Seguro que deseas BORRAR TODO el inventario actual y subir el nuevo Excel?');">
+                        ⚠ Reemplazar Inventario
+                    </button>
+                </form>
             {% endif %}
         </div>
     </div>

@@ -767,6 +767,114 @@ def eliminar_venta(id):
 
     return redirect("/ventas")
 
+@app.route("/reemplazar_inventario", methods=["POST"])
+def reemplazar_inventario():
+    if login_requerido():
+        return redirect("/login")
+
+    if not es_admin():
+        return redirect("/")
+
+    if "archivo" not in request.files:
+        return "No se subió ningún archivo"
+
+    archivo = request.files["archivo"]
+
+    if archivo.filename == "":
+        return "No seleccionaste ningún archivo"
+
+    if not archivo.filename.endswith(".xlsx"):
+        return "Solo se permite archivo .xlsx"
+
+    conn = get_conn()
+
+    if not conn:
+        return "No hay conexión con la base de datos"
+
+    try:
+        df = pd.read_excel(archivo)
+
+        df.columns = df.columns.astype(str).str.strip().str.upper()
+
+        columnas_obligatorias = [
+            "CODIGO",
+            "NOMBRE DEL PRODUCTO",
+            "EDITORIAL",
+            "CATEGORIA",
+            "COMPRAS",
+            "VENTAS",
+            "PRECIO_VENTA",
+            "STOCK",
+            "COSTO UNITARIO",
+            "UTILIDAD PROD"
+        ]
+
+        for col in columnas_obligatorias:
+            if col not in df.columns:
+                return f"Falta la columna: {col}"
+
+        df = df[columnas_obligatorias].copy()
+
+        df = df.fillna("")
+
+        df["CODIGO"] = df["CODIGO"].astype(str).str.strip().str.upper()
+        df["NOMBRE DEL PRODUCTO"] = df["NOMBRE DEL PRODUCTO"].astype(str).str.strip()
+        df["EDITORIAL"] = df["EDITORIAL"].astype(str).str.strip()
+        df["CATEGORIA"] = df["CATEGORIA"].astype(str).str.strip()
+
+        df["COMPRAS"] = pd.to_numeric(df["COMPRAS"], errors="coerce").fillna(0).astype(int)
+        df["VENTAS"] = pd.to_numeric(df["VENTAS"], errors="coerce").fillna(0).astype(int)
+        df["PRECIO_VENTA"] = pd.to_numeric(df["PRECIO_VENTA"], errors="coerce").fillna(0)
+        df["STOCK"] = pd.to_numeric(df["STOCK"], errors="coerce").fillna(0).astype(int)
+        df["COSTO UNITARIO"] = pd.to_numeric(df["COSTO UNITARIO"], errors="coerce").fillna(0)
+        df["UTILIDAD PROD"] = pd.to_numeric(df["UTILIDAD PROD"], errors="coerce").fillna(0)
+
+        df = df[df["CODIGO"] != ""]
+        df = df[df["CODIGO"].str.lower() != "nan"]
+
+        df = df.drop_duplicates(subset=["CODIGO"], keep="last")
+
+        cur = conn.cursor()
+
+        cur.execute("DELETE FROM inventario")
+
+        for _, row in df.iterrows():
+            stock = int(row["STOCK"])
+            costo = float(row["COSTO UNITARIO"])
+            valor_inventario = stock * costo
+
+            cur.execute("""
+                INSERT INTO inventario (
+                    codigo, nombre, editorial, categoria,
+                    compras, ventas, stock,
+                    costo_unitario, precio_venta,
+                    utilidad_prod, valor_inventario
+                )
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (
+                row["CODIGO"],
+                row["NOMBRE DEL PRODUCTO"],
+                row["EDITORIAL"],
+                row["CATEGORIA"],
+                int(row["COMPRAS"]),
+                int(row["VENTAS"]),
+                stock,
+                costo,
+                float(row["PRECIO_VENTA"]),
+                float(row["UTILIDAD PROD"]),
+                valor_inventario
+            ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return redirect("/inventario")
+
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return f"Error al reemplazar inventario: {e}"
 
 init_db()
 
