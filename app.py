@@ -344,6 +344,7 @@ def actualizar_producto():
         return redirect("/")
 
     codigo = limpiar(request.form.get("codigo"))
+    nuevo_nombre = request.form.get("nombre", "").strip()
     nuevo_stock = request.form.get("stock")
     nuevo_precio = request.form.get("precio")
 
@@ -358,7 +359,7 @@ def actualizar_producto():
 
     try:
         cur.execute("""
-            SELECT stock, costo_unitario
+            SELECT nombre, stock, costo_unitario
             FROM inventario
             WHERE UPPER(codigo) = %s
         """, (codigo,))
@@ -368,21 +369,25 @@ def actualizar_producto():
         if not producto:
             return redirect("/inventario")
 
-        stock_actual = producto[0] or 0
-        precio_actual = producto[1] or 0
+        nombre_actual = producto[0] or ""
+        stock_actual = producto[1] or 0
+        precio_actual = producto[2] or 0
 
+        nombre_final = nuevo_nombre if nuevo_nombre != "" else nombre_actual
         stock_final = numero(nuevo_stock, int) if nuevo_stock not in [None, ""] else stock_actual
         precio_final = numero(nuevo_precio, float) if nuevo_precio not in [None, ""] else precio_actual
         valor = stock_final * precio_final
 
         cur.execute("""
             UPDATE inventario
-            SET stock = %s,
+            SET nombre = %s,
+                stock = %s,
                 costo_unitario = %s,
                 precio_venta = %s,
                 valor_inventario = %s
             WHERE UPPER(codigo) = %s
         """, (
+            nombre_final,
             stock_final,
             precio_final,
             precio_final,
