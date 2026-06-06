@@ -3,13 +3,16 @@ import pandas as pd
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import os
-import psycopg2
 from io import BytesIO
+from threading import Lock
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "clave_super_segura_123")
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+# Archivos Excel que usará el sistema
+INVENTARIO_FILE = "inventario.xlsx"
+VENTAS_FILE = "ventas.xlsx"
+excel_lock = Lock()
 
 USUARIOS = {
     "admin": {"password": "Gladis26", "rol": "admin"},
@@ -18,60 +21,20 @@ USUARIOS = {
     "biblioteca": {"password": "Biblioteca26", "rol": "biblioteca"}
 }
 
-def get_conn():
-    if not DATABASE_URL:
-        return None
-    try:
-        return psycopg2.connect(DATABASE_URL)
-    except Exception as e:
-        print("ERROR DB:", e)
-        return None
+COLUMNAS_INVENTARIO = [
+    "codigo", "nombre", "editorial", "categoria",
+    "compras", "ventas", "stock",
+    "costo_unitario", "precio_venta",
+    "utilidad_prod", "valor_inventario"
+]
 
-
-def init_db():
-    conn = get_conn()
-    if not conn:
-        return
-
-    cur = conn.cursor()
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS ventas (
-            id SERIAL PRIMARY KEY,
-            usuario TEXT,
-            codigo TEXT,
-            nombre TEXT,
-            cantidad INT,
-            subtotal FLOAT,
-            metodo TEXT,
-            fecha TIMESTAMP
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS inventario (
-            id SERIAL PRIMARY KEY,
-            codigo TEXT UNIQUE,
-            nombre TEXT,
-            editorial TEXT,
-            categoria TEXT,
-            compras INT DEFAULT 0,
-            ventas INT DEFAULT 0,
-            stock INT DEFAULT 0,
-            costo_unitario FLOAT DEFAULT 0,
-            precio_venta FLOAT DEFAULT 0,
-            utilidad_prod FLOAT DEFAULT 0,
-            valor_inventario FLOAT DEFAULT 0
-        )
-    """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
+COLUMNAS_VENTAS = [
+    "id", "usuario", "codigo", "nombre", "cantidad", "subtotal", "metodo", "fecha"
+]
 
 
 def limpiar(valor):
-    return str(valor).strip().upper() if valor else ""
+    return str(valor).strip().upper() if valor not in [None, ""] else ""
 
 
 def login_requerido():
@@ -91,47 +54,157 @@ def numero(valor, tipo=float):
         if valor in [None, ""]:
             return 0
         return tipo(valor)
-    except:
+    except Exception:
         return 0
 
 
-def cargar_excel():
-    conn = get_conn()
-    if not conn:
-        return pd.DataFrame()
+def normalizar_inventario(df):
+    df = df.copy()
+    df.columns = df.columns.astype(str).str.strip().str.lower()
 
-    df = pd.read_sql("SELECT * FROM inventario ORDER BY codigo ASC", conn)
-    conn.close()
-    return df.fillna("")
+    renombrar = {
+        "codigo": "codigo",
+        "código": "codigo",
+        "nombre del producto": "nombre",
+        "producto": "nombre",
+        "nombre": "nombre",
+        "editorial": "editorial",
+        "categoria": "categoria",
+        "categoría": "categoria",
+        "compras": "compras",
+        "ventas": "ventas",
+        "stock": "stock",
+        "costo unitario": "costo_unitario",
+        "costo_unitario": "costo_unitario",
+        "precio venta": "precio_venta",
+        "precio_venta": "precio_venta",
+        "utilidad prod": "utilidad_prod",
+        "utilidad_prod": "utilidad_prod",
+        "valor inventario": "valor_inventario",
+        "valor_inventario": "valor_inventario"
+    }
+    df = df.rename(columns={c: renombrar.get(c, c) for c in df.columns})
+
+    for col in COLUMNAS_INVENTARIO:
+        if col not in df.columns:
+            df[col] = 0 if col in ["compras", "ventas", "stock", "costo_unitario", "precio_venta", "utilidad_prod", "valor_inventario"] else ""
+
+    df = df[COLUMNAS_INVENTARIO].fillna("")
+    df["codigo"] = df["codigo"].astype(str).str.strip().str.upper()
+    df["nombre"] = df["nombre"].astype(str).str.strip()
+    df["editorial"] = df["editorial"].astype(str).str.strip()
+    df["categoria"] = df["categoria"].astype(str).str.strip()
+
+    for col in ["compras", "ventas", "stock"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
+
+    for col in ["costo_unitario", "precio_venta", "utilidad_prod", "valor_inventario"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+
+    df = df[(df["codigo"] != "") & (df["codigo"].str.lower() != "nan")]
+    df = df.drop_duplicates(subset=["codigo"], keep="last")
+    df["valor_inventario"] = df["stock"] * df["costo_unitario"]
+    return df.sort_values("codigo").reset_index(drop=True)
+
+
+def normalizar_ventas(df):
+    df = df.copy()
+    df.columns = df.columns.astype(str).str.strip().str.lower()
+
+    renombrar = {
+        "codigo": "codigo",
+        "código": "codigo",
+        "fecha": "fecha",
+        "nombre": "nombre",
+        "producto": "nombre",
+        "cantidad": "cantidad",
+        "subtotal": "subtotal",
+        "metodo": "metodo",
+        "método": "metodo",
+        "usuario": "usuario",
+        "id": "id"
+    }
+
+    df = df.rename(columns={c: renombrar.get(c, c) for c in df.columns})
+
+    for col in COLUMNAS_VENTAS:
+        if col not in df.columns:
+            df[col] = "" if col not in ["id", "cantidad", "subtotal"] else 0
+
+    df = df[COLUMNAS_VENTAS].fillna("")
+
+    df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce").fillna(0).astype(int)
+    df["subtotal"] = pd.to_numeric(df["subtotal"], errors="coerce").fillna(0.0)
+    df["metodo"] = df["metodo"].astype(str).str.upper()
+    df["codigo"] = df["codigo"].astype(str).str.strip().str.upper()
+    df["usuario"] = df["usuario"].astype(str).str.strip()
+    df["nombre"] = df["nombre"].astype(str).str.strip()
+    df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
+
+    # Si el Excel antiguo no tenía ID, se crean IDs únicos para poder eliminar ventas sin errores.
+    ids = pd.to_numeric(df["id"], errors="coerce").fillna(0).astype(int)
+    if (ids <= 0).any() or ids.duplicated().any():
+        df["id"] = range(1, len(df) + 1)
+    else:
+        df["id"] = ids
+
+    return df
+
+
+def asegurar_archivos():
+    if not os.path.exists(INVENTARIO_FILE):
+        pd.DataFrame(columns=COLUMNAS_INVENTARIO).to_excel(INVENTARIO_FILE, index=False)
+    if not os.path.exists(VENTAS_FILE):
+        pd.DataFrame(columns=COLUMNAS_VENTAS).to_excel(VENTAS_FILE, index=False)
+
+
+def cargar_inventario():
+    asegurar_archivos()
+    try:
+        return normalizar_inventario(pd.read_excel(INVENTARIO_FILE))
+    except Exception as e:
+        print("ERROR LEYENDO INVENTARIO:", e)
+        return pd.DataFrame(columns=COLUMNAS_INVENTARIO)
+
+
+def guardar_inventario(df):
+    normalizar_inventario(df).to_excel(INVENTARIO_FILE, index=False)
+
+
+def cargar_ventas():
+    asegurar_archivos()
+    try:
+        return normalizar_ventas(pd.read_excel(VENTAS_FILE))
+    except Exception as e:
+        print("ERROR LEYENDO VENTAS:", e)
+        return pd.DataFrame(columns=COLUMNAS_VENTAS)
+
+
+def guardar_ventas(df):
+    normalizar_ventas(df).to_excel(VENTAS_FILE, index=False)
+
+
+def cargar_excel():
+    return cargar_inventario()
 
 
 def buscar_producto(busqueda):
-    conn = get_conn()
-    if not conn:
-        return None
-
-    cur = conn.cursor()
+    df = cargar_inventario()
     busqueda = limpiar(busqueda)
-
-    cur.execute("""
-        SELECT codigo, nombre, stock, costo_unitario
-        FROM inventario
-        WHERE UPPER(codigo)=%s OR UPPER(nombre)=%s
-        LIMIT 1
-    """, (busqueda, busqueda))
-
-    p = cur.fetchone()
-    cur.close()
-    conn.close()
-
-    if not p:
+    if df.empty or not busqueda:
         return None
 
+    filtro = (df["codigo"].astype(str).str.upper() == busqueda) | (df["nombre"].astype(str).str.upper() == busqueda)
+    resultado = df[filtro]
+    if resultado.empty:
+        return None
+
+    p = resultado.iloc[0]
     return {
-        "codigo": p[0],
-        "nombre": p[1],
-        "stock": p[2] or 0,
-        "costo_unitario": p[3] or 0
+        "codigo": p["codigo"],
+        "nombre": p["nombre"],
+        "stock": int(p["stock"] or 0),
+        "costo_unitario": float(p["costo_unitario"] or 0)
     }
 
 
@@ -165,25 +238,17 @@ def index():
 
     carrito = session.get("carrito", [])
     total = sum(i["subtotal"] for i in carrito)
-
     df = cargar_excel()
 
-    editoriales = []
-    categorias = []
+    editoriales = sorted(df["editorial"].dropna().astype(str).unique()) if not df.empty else []
+    categorias = sorted(df["categoria"].dropna().astype(str).unique()) if not df.empty else []
     sugerencias = []
     tabla = ""
 
     if not df.empty:
-        if "editorial" in df.columns:
-            editoriales = sorted(df["editorial"].dropna().astype(str).unique())
-
-        if "categoria" in df.columns:
-            categorias = sorted(df["categoria"].dropna().astype(str).unique())
-
         for _, row in df.iterrows():
             sugerencias.append(str(row["codigo"]))
             sugerencias.append(str(row["nombre"]))
-
         sugerencias = sorted(list(set(sugerencias)))
         tabla = df.to_html(index=False, classes="tabla")
 
@@ -199,16 +264,15 @@ def index():
         tabla=tabla
     )
 
+
 @app.route("/inventario")
 def inventario():
     if login_requerido():
         return redirect("/login")
-
     if not es_admin():
         return redirect("/")
 
     df = cargar_excel()
-
     tabla = ""
     editoriales = []
     categorias = []
@@ -216,19 +280,14 @@ def inventario():
     libros_inventario = []
 
     if not df.empty:
-        if "editorial" in df.columns:
-            editoriales = sorted(df["editorial"].dropna().astype(str).unique())
-
-        if "categoria" in df.columns:
-            categorias = sorted(df["categoria"].dropna().astype(str).unique())
+        editoriales = sorted(df["editorial"].dropna().astype(str).unique())
+        categorias = sorted(df["categoria"].dropna().astype(str).unique())
 
         for _, row in df.iterrows():
             codigo = str(row["codigo"]).strip()
             nombre = str(row["nombre"]).strip()
-
             sugerencias.append(codigo)
             sugerencias.append(nombre)
-
             libros_inventario.append({
                 "codigo": codigo,
                 "nombre": nombre,
@@ -249,33 +308,26 @@ def inventario():
         sugerencias=sugerencias,
         libros_inventario=libros_inventario
     )
+
+
 @app.route("/descargar_inventario")
 def descargar_inventario():
     if login_requerido():
         return redirect("/login")
-
     if not es_admin():
         return redirect("/")
 
     df = cargar_excel()
-
     archivo = BytesIO()
     df.to_excel(archivo, index=False)
     archivo.seek(0)
-
-    return send_file(
-        archivo,
-        as_attachment=True,
-        download_name="inventario.xlsx",
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    return send_file(archivo, as_attachment=True, download_name="inventario.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 @app.route("/inventario/agregar", methods=["POST"])
 def agregar_producto():
     if login_requerido():
         return redirect("/login")
-
     if not es_admin():
         return redirect("/")
 
@@ -289,48 +341,30 @@ def agregar_producto():
     if not codigo or not nombre:
         return redirect("/inventario")
 
-    utilidad = 0
-    valor = stock * precio
+    with excel_lock:
+        df = cargar_inventario()
+        fila = {
+            "codigo": codigo,
+            "nombre": nombre,
+            "editorial": editorial,
+            "categoria": categoria,
+            "compras": stock,
+            "ventas": 0,
+            "stock": stock,
+            "costo_unitario": precio,
+            "precio_venta": precio,
+            "utilidad_prod": 0,
+            "valor_inventario": stock * precio
+        }
 
-    conn = get_conn()
-    if not conn:
-        return redirect("/inventario")
+        if codigo in df["codigo"].astype(str).str.upper().values:
+            idx = df.index[df["codigo"].astype(str).str.upper() == codigo][0]
+            for k, v in fila.items():
+                df.loc[idx, k] = v
+        else:
+            df = pd.concat([df, pd.DataFrame([fila])], ignore_index=True)
 
-    cur = conn.cursor()
-
-    try:
-        cur.execute("""
-            INSERT INTO inventario (
-                codigo, nombre, editorial, categoria,
-                compras, ventas, stock,
-                costo_unitario, precio_venta,
-                utilidad_prod, valor_inventario
-            )
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            ON CONFLICT (codigo) DO UPDATE SET
-                nombre = EXCLUDED.nombre,
-                editorial = EXCLUDED.editorial,
-                categoria = EXCLUDED.categoria,
-                stock = EXCLUDED.stock,
-                costo_unitario = EXCLUDED.costo_unitario,
-                precio_venta = EXCLUDED.precio_venta,
-                valor_inventario = EXCLUDED.valor_inventario
-        """, (
-            codigo, nombre, editorial, categoria,
-            stock, 0, stock,
-            precio, precio,
-            utilidad, valor
-        ))
-
-        conn.commit()
-
-    except Exception as e:
-        print("ERROR AGREGANDO PRODUCTO:", e)
-        conn.rollback()
-
-    finally:
-        cur.close()
-        conn.close()
+        guardar_inventario(df)
 
     return redirect("/inventario")
 
@@ -339,7 +373,6 @@ def agregar_producto():
 def actualizar_producto():
     if login_requerido():
         return redirect("/login")
-
     if not es_admin():
         return redirect("/")
 
@@ -351,59 +384,21 @@ def actualizar_producto():
     if not codigo:
         return redirect("/inventario")
 
-    conn = get_conn()
-    if not conn:
-        return redirect("/inventario")
-
-    cur = conn.cursor()
-
-    try:
-        cur.execute("""
-            SELECT nombre, stock, costo_unitario
-            FROM inventario
-            WHERE UPPER(codigo) = %s
-        """, (codigo,))
-
-        producto = cur.fetchone()
-
-        if not producto:
-            return redirect("/inventario")
-
-        nombre_actual = producto[0] or ""
-        stock_actual = producto[1] or 0
-        precio_actual = producto[2] or 0
-
-        nombre_final = nuevo_nombre if nuevo_nombre != "" else nombre_actual
-        stock_final = numero(nuevo_stock, int) if nuevo_stock not in [None, ""] else stock_actual
-        precio_final = numero(nuevo_precio, float) if nuevo_precio not in [None, ""] else precio_actual
-        valor = stock_final * precio_final
-
-        cur.execute("""
-            UPDATE inventario
-            SET nombre = %s,
-                stock = %s,
-                costo_unitario = %s,
-                precio_venta = %s,
-                valor_inventario = %s
-            WHERE UPPER(codigo) = %s
-        """, (
-            nombre_final,
-            stock_final,
-            precio_final,
-            precio_final,
-            valor,
-            codigo
-        ))
-
-        conn.commit()
-
-    except Exception as e:
-        print("ERROR ACTUALIZANDO PRODUCTO:", e)
-        conn.rollback()
-
-    finally:
-        cur.close()
-        conn.close()
+    with excel_lock:
+        df = cargar_inventario()
+        filtro = df["codigo"].astype(str).str.upper() == codigo
+        if filtro.any():
+            idx = df.index[filtro][0]
+            if nuevo_nombre != "":
+                df.loc[idx, "nombre"] = nuevo_nombre
+            if nuevo_stock not in [None, ""]:
+                df.loc[idx, "stock"] = numero(nuevo_stock, int)
+            if nuevo_precio not in [None, ""]:
+                precio_final = numero(nuevo_precio, float)
+                df.loc[idx, "costo_unitario"] = precio_final
+                df.loc[idx, "precio_venta"] = precio_final
+            df.loc[idx, "valor_inventario"] = int(df.loc[idx, "stock"]) * float(df.loc[idx, "costo_unitario"])
+            guardar_inventario(df)
 
     return redirect("/inventario")
 
@@ -412,49 +407,28 @@ def actualizar_producto():
 def eliminar_producto():
     if login_requerido():
         return redirect("/login")
-
     if not es_admin():
         return redirect("/")
 
     codigo = limpiar(request.form.get("codigo"))
-
     if not codigo:
         return redirect("/inventario")
 
-    conn = get_conn()
-    if not conn:
-        return redirect("/inventario")
-
-    cur = conn.cursor()
-
-    try:
-        cur.execute("""
-            DELETE FROM inventario
-            WHERE UPPER(codigo) = %s
-        """, (codigo,))
-
-        conn.commit()
-
-    except Exception as e:
-        print("ERROR ELIMINANDO PRODUCTO:", e)
-        conn.rollback()
-
-    finally:
-        cur.close()
-        conn.close()
+    with excel_lock:
+        df = cargar_inventario()
+        df = df[df["codigo"].astype(str).str.upper() != codigo]
+        guardar_inventario(df)
 
     return redirect("/inventario")
+
 
 @app.route("/eliminar/<int:index>")
 def eliminar(index):
     if login_requerido():
         return redirect("/login")
-
     carrito = session.get("carrito", [])
-
     if 0 <= index < len(carrito):
         carrito.pop(index)
-
     session["carrito"] = carrito
     return redirect("/")
 
@@ -465,7 +439,6 @@ def agregar():
         return redirect("/login")
 
     carrito = session.get("carrito", [])
-
     codigo = request.form.get("codigo")
     cantidad = numero(request.form.get("cantidad"), int)
 
@@ -473,10 +446,8 @@ def agregar():
         return redirect("/")
 
     producto = buscar_producto(codigo)
-
     if not producto:
         return redirect("/")
-
     if cantidad > producto["stock"]:
         return redirect("/")
 
@@ -498,129 +469,95 @@ def finalizar(metodo):
         return redirect("/login")
 
     carrito = session.get("carrito", [])
-
     if not carrito:
         return redirect("/")
 
-    conn = get_conn()
-    if not conn:
-        return redirect("/")
-
-    cur = conn.cursor()
-
     fecha_manual = request.form.get("fecha_venta")
-    print("FECHA RECIBIDA:", fecha_manual)
-
     if fecha_manual and fecha_manual.strip() != "":
-       try:
-           fecha_venta = datetime.strptime(fecha_manual, "%Y-%m-%dT%H:%M")
-       except Exception as e:
-           print("ERROR PARSEANDO FECHA:", e)
-           fecha_venta = hora_peru()
+        try:
+            fecha_venta = datetime.strptime(fecha_manual, "%Y-%m-%dT%H:%M")
+        except Exception:
+            fecha_venta = hora_peru()
     else:
         fecha_venta = hora_peru()
 
-    try:
+    with excel_lock:
+        df_inv = cargar_inventario()
+        df_ventas = cargar_ventas()
+
+        # Validar stock antes de guardar cualquier cosa
         for item in carrito:
             codigo = limpiar(item["codigo"])
             cantidad = int(item["cantidad"])
-
-            cur.execute("""
-                SELECT stock, ventas
-                FROM inventario
-                WHERE UPPER(codigo) = %s
-            """, (codigo,))
-
-            prod = cur.fetchone()
-
-            if not prod:
-                conn.rollback()
+            filtro = df_inv["codigo"].astype(str).str.upper() == codigo
+            if not filtro.any():
+                return redirect("/")
+            idx = df_inv.index[filtro][0]
+            if cantidad > int(df_inv.loc[idx, "stock"]):
                 return redirect("/")
 
-            stock_actual = prod[0] or 0
-            ventas_actuales = prod[1] or 0
+        siguiente_id = int(df_ventas["id"].max()) + 1 if not df_ventas.empty and df_ventas["id"].max() > 0 else 1
+        nuevas_ventas = []
 
-            if cantidad > stock_actual:
-                conn.rollback()
-                return redirect("/")
+        for item in carrito:
+            codigo = limpiar(item["codigo"])
+            cantidad = int(item["cantidad"])
+            filtro = df_inv["codigo"].astype(str).str.upper() == codigo
+            idx = df_inv.index[filtro][0]
 
-            nuevo_stock = stock_actual - cantidad
-            nuevas_ventas = ventas_actuales + cantidad
+            df_inv.loc[idx, "stock"] = int(df_inv.loc[idx, "stock"]) - cantidad
+            df_inv.loc[idx, "ventas"] = int(df_inv.loc[idx, "ventas"]) + cantidad
+            df_inv.loc[idx, "valor_inventario"] = int(df_inv.loc[idx, "stock"]) * float(df_inv.loc[idx, "costo_unitario"])
 
-            cur.execute("""
-                UPDATE inventario
-                SET stock = %s, ventas = %s
-                WHERE UPPER(codigo) = %s
-            """, (nuevo_stock, nuevas_ventas, codigo))
+            nuevas_ventas.append({
+                "id": siguiente_id,
+                "usuario": session["user"],
+                "codigo": codigo,
+                "nombre": item["nombre"],
+                "cantidad": cantidad,
+                "subtotal": float(item["subtotal"]),
+                "metodo": metodo.upper(),
+                "fecha": fecha_venta
+            })
+            siguiente_id += 1
 
-            cur.execute("""
-                INSERT INTO ventas 
-                (usuario, codigo, nombre, cantidad, subtotal, metodo, fecha)
-                VALUES (%s,%s,%s,%s,%s,%s,%s)
-            """, (
-                session["user"],
-                codigo,
-                item["nombre"],
-                cantidad,
-                item["subtotal"],
-                metodo.upper(),
-                fecha_venta
-            ))
-
-        conn.commit()
-
-    except Exception as e:
-        print("ERROR GUARDANDO VENTA:", e)
-        conn.rollback()
-
-    finally:
-        cur.close()
-        conn.close()
+        df_ventas = pd.concat([df_ventas, pd.DataFrame(nuevas_ventas)], ignore_index=True)
+        guardar_inventario(df_inv)
+        guardar_ventas(df_ventas)
 
     session["carrito"] = []
     return redirect("/")
 
 
 def obtener_ventas_filtradas():
-    conn = get_conn()
-
-    if not conn:
-        return pd.DataFrame()
+    df = cargar_ventas()
+    if df.empty:
+        return df
 
     inicio = request.args.get("inicio")
     fin = request.args.get("fin")
     usuario = request.args.get("usuario")
     metodo = request.args.get("metodo")
 
-    query = "SELECT * FROM ventas WHERE 1=1"
-    params = []
+    df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
 
     if inicio:
-        query += " AND fecha >= %s"
-        params.append(inicio)
+        df = df[df["fecha"] >= pd.to_datetime(inicio, errors="coerce")]
 
     if fin:
         try:
             fin_dt = datetime.strptime(fin, "%Y-%m-%d") + timedelta(days=1)
-            query += " AND fecha < %s"
-            params.append(fin_dt.strftime("%Y-%m-%d"))
-        except:
+            df = df[df["fecha"] < fin_dt]
+        except Exception:
             pass
 
     if usuario:
-        query += " AND UPPER(usuario) = %s"
-        params.append(usuario.upper())
+        df = df[df["usuario"].astype(str).str.upper() == usuario.upper()]
 
     if metodo:
-        query += " AND UPPER(metodo) = %s"
-        params.append(metodo.upper())
+        df = df[df["metodo"].astype(str).str.upper() == metodo.upper()]
 
-    query += " ORDER BY fecha DESC"
-
-    df = pd.read_sql(query, conn, params=params)
-    conn.close()
-
-    return df
+    return df.sort_values("fecha", ascending=False)
 
 
 @app.route("/ventas")
@@ -653,7 +590,6 @@ def ventas():
     df["subtotal"] = pd.to_numeric(df["subtotal"], errors="coerce").fillna(0)
     df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce").fillna(0)
     df["metodo"] = df["metodo"].astype(str).str.upper()
-
     df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
     df["fecha"] = df["fecha"].dt.strftime("%d/%m/%Y %H:%M:%S")
 
@@ -669,12 +605,12 @@ def ventas():
 
     try:
         producto_top = df.groupby("nombre")["cantidad"].sum().sort_values(ascending=False).index[0]
-    except:
+    except Exception:
         producto_top = "Sin datos"
 
     try:
         vendedor_top = df.groupby("usuario")["subtotal"].sum().sort_values(ascending=False).index[0]
-    except:
+    except Exception:
         vendedor_top = "Sin datos"
 
     return render_template(
@@ -703,80 +639,47 @@ def descargar_ventas():
         return redirect("/login")
 
     df = obtener_ventas_filtradas()
-
     archivo = BytesIO()
     df.to_excel(archivo, index=False)
     archivo.seek(0)
-
-    return send_file(
-        archivo,
-        as_attachment=True,
-        download_name="ventas.xlsx",
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    return send_file(archivo, as_attachment=True, download_name="ventas.xlsx", mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 @app.route("/ventas/eliminar/<int:id>")
 def eliminar_venta(id):
     if login_requerido():
         return redirect("/login")
-
     if not es_admin():
         return redirect("/ventas")
 
-    conn = get_conn()
-    if not conn:
-        return redirect("/ventas")
+    with excel_lock:
+        df_ventas = cargar_ventas()
+        df_inv = cargar_inventario()
 
-    cur = conn.cursor()
+        venta = df_ventas[df_ventas["id"] == id]
+        if not venta.empty:
+            row = venta.iloc[0]
+            codigo = limpiar(row["codigo"])
+            cantidad = int(row["cantidad"])
 
-    try:
-        cur.execute("SELECT codigo, cantidad FROM ventas WHERE id = %s", (id,))
-        venta = cur.fetchone()
+            filtro = df_inv["codigo"].astype(str).str.upper() == codigo
+            if filtro.any():
+                idx = df_inv.index[filtro][0]
+                df_inv.loc[idx, "stock"] = int(df_inv.loc[idx, "stock"]) + cantidad
+                df_inv.loc[idx, "ventas"] = max(0, int(df_inv.loc[idx, "ventas"]) - cantidad)
+                df_inv.loc[idx, "valor_inventario"] = int(df_inv.loc[idx, "stock"]) * float(df_inv.loc[idx, "costo_unitario"])
 
-        if venta:
-            codigo = limpiar(venta[0])
-            cantidad = int(venta[1])
-
-            cur.execute("""
-                SELECT stock, ventas
-                FROM inventario
-                WHERE UPPER(codigo) = %s
-            """, (codigo,))
-
-            producto = cur.fetchone()
-
-            if producto:
-                stock_actual = producto[0] or 0
-                ventas_actuales = producto[1] or 0
-
-                nuevo_stock = stock_actual + cantidad
-                nuevas_ventas = max(0, ventas_actuales - cantidad)
-
-                cur.execute("""
-                    UPDATE inventario
-                    SET stock = %s, ventas = %s
-                    WHERE UPPER(codigo) = %s
-                """, (nuevo_stock, nuevas_ventas, codigo))
-
-            cur.execute("DELETE FROM ventas WHERE id = %s", (id,))
-            conn.commit()
-
-    except Exception as e:
-        print("ERROR ELIMINANDO VENTA:", e)
-        conn.rollback()
-
-    finally:
-        cur.close()
-        conn.close()
+            df_ventas = df_ventas[df_ventas["id"] != id]
+            guardar_inventario(df_inv)
+            guardar_ventas(df_ventas)
 
     return redirect("/ventas")
+
 
 @app.route("/reemplazar_inventario", methods=["POST"])
 def reemplazar_inventario():
     if login_requerido():
         return redirect("/login")
-
     if not es_admin():
         return redirect("/")
 
@@ -784,104 +687,22 @@ def reemplazar_inventario():
         return "No se subió ningún archivo"
 
     archivo = request.files["archivo"]
-
     if archivo.filename == "":
         return "No seleccionaste ningún archivo"
-
     if not archivo.filename.endswith(".xlsx"):
         return "Solo se permite archivo .xlsx"
 
-    conn = get_conn()
-
-    if not conn:
-        return "No hay conexión con la base de datos"
-
     try:
         df = pd.read_excel(archivo)
-
-        df.columns = df.columns.astype(str).str.strip().str.upper()
-
-        columnas_obligatorias = [
-            "CODIGO",
-            "NOMBRE DEL PRODUCTO",
-            "EDITORIAL",
-            "CATEGORIA",
-            "COMPRAS",
-            "VENTAS",
-            "PRECIO_VENTA",
-            "STOCK",
-            "COSTO UNITARIO",
-            "UTILIDAD PROD"
-        ]
-
-        for col in columnas_obligatorias:
-            if col not in df.columns:
-                return f"Falta la columna: {col}"
-
-        df = df[columnas_obligatorias].copy()
-
-        df = df.fillna("")
-
-        df["CODIGO"] = df["CODIGO"].astype(str).str.strip().str.upper()
-        df["NOMBRE DEL PRODUCTO"] = df["NOMBRE DEL PRODUCTO"].astype(str).str.strip()
-        df["EDITORIAL"] = df["EDITORIAL"].astype(str).str.strip()
-        df["CATEGORIA"] = df["CATEGORIA"].astype(str).str.strip()
-
-        df["COMPRAS"] = pd.to_numeric(df["COMPRAS"], errors="coerce").fillna(0).astype(int)
-        df["VENTAS"] = pd.to_numeric(df["VENTAS"], errors="coerce").fillna(0).astype(int)
-        df["PRECIO_VENTA"] = pd.to_numeric(df["PRECIO_VENTA"], errors="coerce").fillna(0)
-        df["STOCK"] = pd.to_numeric(df["STOCK"], errors="coerce").fillna(0).astype(int)
-        df["COSTO UNITARIO"] = pd.to_numeric(df["COSTO UNITARIO"], errors="coerce").fillna(0)
-        df["UTILIDAD PROD"] = pd.to_numeric(df["UTILIDAD PROD"], errors="coerce").fillna(0)
-
-        df = df[df["CODIGO"] != ""]
-        df = df[df["CODIGO"].str.lower() != "nan"]
-
-        df = df.drop_duplicates(subset=["CODIGO"], keep="last")
-
-        cur = conn.cursor()
-
-        cur.execute("DELETE FROM inventario")
-
-        for _, row in df.iterrows():
-            stock = int(row["STOCK"])
-            costo = float(row["COSTO UNITARIO"])
-            valor_inventario = stock * costo
-
-            cur.execute("""
-                INSERT INTO inventario (
-                    codigo, nombre, editorial, categoria,
-                    compras, ventas, stock,
-                    costo_unitario, precio_venta,
-                    utilidad_prod, valor_inventario
-                )
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            """, (
-                row["CODIGO"],
-                row["NOMBRE DEL PRODUCTO"],
-                row["EDITORIAL"],
-                row["CATEGORIA"],
-                int(row["COMPRAS"]),
-                int(row["VENTAS"]),
-                stock,
-                costo,
-                float(row["PRECIO_VENTA"]),
-                float(row["UTILIDAD PROD"]),
-                valor_inventario
-            ))
-
-        conn.commit()
-        cur.close()
-        conn.close()
-
+        df = normalizar_inventario(df)
+        with excel_lock:
+            guardar_inventario(df)
         return redirect("/inventario")
-
     except Exception as e:
-        conn.rollback()
-        conn.close()
         return f"Error al reemplazar inventario: {e}"
 
-init_db()
+
+asegurar_archivos()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
