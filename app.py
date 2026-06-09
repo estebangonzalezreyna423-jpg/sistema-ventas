@@ -240,8 +240,18 @@ def index():
     total = sum(i["subtotal"] for i in carrito)
     df = cargar_excel()
 
+    filtro_editorial = request.args.get("editorial", "").strip()
+    filtro_categoria = request.args.get("categoria", "").strip()
+
     editoriales = sorted(df["editorial"].dropna().astype(str).unique()) if not df.empty else []
     categorias = sorted(df["categoria"].dropna().astype(str).unique()) if not df.empty else []
+
+    if filtro_editorial:
+        df = df[df["editorial"].astype(str).str.strip() == filtro_editorial]
+
+    if filtro_categoria:
+        df = df[df["categoria"].astype(str).str.strip() == filtro_categoria]
+
     sugerencias = []
     tabla = ""
 
@@ -249,6 +259,7 @@ def index():
         for _, row in df.iterrows():
             sugerencias.append(str(row["codigo"]))
             sugerencias.append(str(row["nombre"]))
+
         sugerencias = sorted(list(set(sugerencias)))
         tabla = df.to_html(index=False, classes="tabla")
 
@@ -261,7 +272,9 @@ def index():
         editoriales=editoriales,
         categorias=categorias,
         sugerencias=sugerencias,
-        tabla=tabla
+        tabla=tabla,
+        filtro_editorial=filtro_editorial,
+        filtro_categoria=filtro_categoria
     )
 
 
