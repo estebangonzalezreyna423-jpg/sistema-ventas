@@ -378,18 +378,18 @@ tr:nth-child(even) { background: #1f2937; }
 
     <form method="get" action="/">
         <select name="editorial">
-            <option value="">Editorial</option>
-            {% for e in editoriales %}
-                <option value="{{ e }}">{{ e }}</option>
-            {% endfor %}
-        </select>
+    <option value="">Editorial</option>
+    {% for e in editoriales %}
+        <option value="{{ e }}" {% if filtro_editorial == e %}selected{% endif %}>{{ e }}</option>
+    {% endfor %}
+</select>
 
-        <select name="categoria">
-            <option value="">Categoría</option>
-            {% for c in categorias %}
-                <option value="{{ c }}">{{ c }}</option>
-            {% endfor %}
-        </select>
+<select name="categoria">
+    <option value="">Categoría</option>
+    {% for c in categorias %}
+        <option value="{{ c }}" {% if filtro_categoria == c %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+</select>
 
         <button class="btn-filtrar">Filtrar</button>
     </form>
