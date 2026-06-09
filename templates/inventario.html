@@ -313,7 +313,7 @@ function toggle(id) {
 
             <input type="text" name="nombre" id="nuevoNombre" placeholder="Nuevo nombre del libro">
             <input type="number" name="stock" placeholder="Nuevo stock">
-            <input type="number" name="precio" placeholder="Nuevo precio">
+            <input type="number" name="precio" placeholder="Nuevo precio" step="0.01" min="0">
 
             <button class="btn btn-editar">Actualizar</button>
 
@@ -331,7 +331,7 @@ function toggle(id) {
                 <input type="text" name="codigo" placeholder="Código">
                 <input type="text" name="nombre" placeholder="Nombre">
 
-                <input type="number" name="precio" placeholder="Precio">
+                <input type="number" name="precio" placeholder="Precio" step="0.01" min="0">
                 <input type="number" name="stock" placeholder="Stock">
 
                 <input type="text" name="categoria" placeholder="Categoría">
@@ -392,6 +392,7 @@ input.addEventListener("input", () => {
         div.onclick = () => {
             input.value = l.nombre;
             codigoInput.value = l.codigo;
+            document.getElementById("nuevoNombre").value = l.nombre;
             box.innerHTML = "";
 
             document.getElementById("infoLibro").classList.remove("hidden");
