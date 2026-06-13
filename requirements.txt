@@ -2,3 +2,5 @@ Flask
 pandas
 openpyxl
 gunicorn
+SQLAlchemy
+psycopg2-binary

@@ -5,14 +5,21 @@ from zoneinfo import ZoneInfo
 import os
 from io import BytesIO
 from threading import Lock
+from sqlalchemy import create_engine, text
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "clave_super_segura_123")
 
-# Archivos Excel que usará el sistema
+# Archivos Excel antiguos: solo se usarán para migrar datos iniciales si existen
 INVENTARIO_FILE = "inventario.xlsx"
 VENTAS_FILE = "ventas.xlsx"
-excel_lock = Lock()
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("Falta configurar DATABASE_URL en Render > Environment")
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+db_lock = Lock()
 
 USUARIOS = {
     "admin": {"password": "Gladis26", "rol": "admin"},
@@ -151,37 +158,94 @@ def normalizar_ventas(df):
     return df
 
 
-def asegurar_archivos():
-    if not os.path.exists(INVENTARIO_FILE):
-        pd.DataFrame(columns=COLUMNAS_INVENTARIO).to_excel(INVENTARIO_FILE, index=False)
-    if not os.path.exists(VENTAS_FILE):
-        pd.DataFrame(columns=COLUMNAS_VENTAS).to_excel(VENTAS_FILE, index=False)
+def inicializar_bd():
+    """Crea las tablas en PostgreSQL y migra desde Excel si la BD está vacía."""
+    with engine.begin() as conn:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS inventario (
+                codigo TEXT PRIMARY KEY,
+                nombre TEXT,
+                editorial TEXT,
+                categoria TEXT,
+                compras INTEGER DEFAULT 0,
+                ventas INTEGER DEFAULT 0,
+                stock INTEGER DEFAULT 0,
+                costo_unitario NUMERIC(12,2) DEFAULT 0,
+                precio_venta NUMERIC(12,2) DEFAULT 0,
+                utilidad_prod NUMERIC(12,2) DEFAULT 0,
+                valor_inventario NUMERIC(12,2) DEFAULT 0
+            )
+        """))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS ventas (
+                id INTEGER PRIMARY KEY,
+                usuario TEXT,
+                codigo TEXT,
+                nombre TEXT,
+                cantidad INTEGER DEFAULT 0,
+                subtotal NUMERIC(12,2) DEFAULT 0,
+                metodo TEXT,
+                fecha TIMESTAMP
+            )
+        """))
+
+        total_inv = conn.execute(text("SELECT COUNT(*) FROM inventario")).scalar()
+        total_ventas = conn.execute(text("SELECT COUNT(*) FROM ventas")).scalar()
+
+        # Solo migra desde Excel si las tablas están vacías. No borra datos ya guardados.
+        if total_inv == 0 and os.path.exists(INVENTARIO_FILE):
+            try:
+                df_inv = normalizar_inventario(pd.read_excel(INVENTARIO_FILE))
+                if not df_inv.empty:
+                    df_inv.to_sql("inventario", conn, if_exists="append", index=False)
+                    print("Inventario migrado desde Excel a PostgreSQL")
+            except Exception as e:
+                print("No se pudo migrar inventario.xlsx:", e)
+
+        if total_ventas == 0 and os.path.exists(VENTAS_FILE):
+            try:
+                df_ven = normalizar_ventas(pd.read_excel(VENTAS_FILE))
+                if not df_ven.empty:
+                    df_ven.to_sql("ventas", conn, if_exists="append", index=False)
+                    print("Ventas migradas desde Excel a PostgreSQL")
+            except Exception as e:
+                print("No se pudo migrar ventas.xlsx:", e)
 
 
 def cargar_inventario():
-    asegurar_archivos()
     try:
-        return normalizar_inventario(pd.read_excel(INVENTARIO_FILE))
+        with engine.connect() as conn:
+            df = pd.read_sql("SELECT * FROM inventario ORDER BY codigo", conn)
+        return normalizar_inventario(df)
     except Exception as e:
-        print("ERROR LEYENDO INVENTARIO:", e)
+        print("ERROR LEYENDO INVENTARIO EN BD:", e)
         return pd.DataFrame(columns=COLUMNAS_INVENTARIO)
 
 
 def guardar_inventario(df):
-    normalizar_inventario(df).to_excel(INVENTARIO_FILE, index=False)
+    df = normalizar_inventario(df)
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM inventario"))
+        if not df.empty:
+            df.to_sql("inventario", conn, if_exists="append", index=False)
 
 
 def cargar_ventas():
-    asegurar_archivos()
     try:
-        return normalizar_ventas(pd.read_excel(VENTAS_FILE))
+        with engine.connect() as conn:
+            df = pd.read_sql("SELECT * FROM ventas ORDER BY id", conn)
+        return normalizar_ventas(df)
     except Exception as e:
-        print("ERROR LEYENDO VENTAS:", e)
+        print("ERROR LEYENDO VENTAS EN BD:", e)
         return pd.DataFrame(columns=COLUMNAS_VENTAS)
 
 
 def guardar_ventas(df):
-    normalizar_ventas(df).to_excel(VENTAS_FILE, index=False)
+    df = normalizar_ventas(df)
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM ventas"))
+        if not df.empty:
+            df.to_sql("ventas", conn, if_exists="append", index=False)
 
 
 def cargar_excel():
@@ -354,7 +418,7 @@ def agregar_producto():
     if not codigo or not nombre:
         return redirect("/inventario")
 
-    with excel_lock:
+    with db_lock:
         df = cargar_inventario()
         fila = {
             "codigo": codigo,
@@ -397,7 +461,7 @@ def actualizar_producto():
     if not codigo:
         return redirect("/inventario")
 
-    with excel_lock:
+    with db_lock:
         df = cargar_inventario()
         filtro = df["codigo"].astype(str).str.upper() == codigo
         if filtro.any():
@@ -427,7 +491,7 @@ def eliminar_producto():
     if not codigo:
         return redirect("/inventario")
 
-    with excel_lock:
+    with db_lock:
         df = cargar_inventario()
         df = df[df["codigo"].astype(str).str.upper() != codigo]
         guardar_inventario(df)
@@ -494,7 +558,7 @@ def finalizar(metodo):
     else:
         fecha_venta = hora_peru()
 
-    with excel_lock:
+    with db_lock:
         df_inv = cargar_inventario()
         df_ventas = cargar_ventas()
 
@@ -665,7 +729,7 @@ def eliminar_venta(id):
     if not es_admin():
         return redirect("/ventas")
 
-    with excel_lock:
+    with db_lock:
         df_ventas = cargar_ventas()
         df_inv = cargar_inventario()
 
@@ -708,14 +772,14 @@ def reemplazar_inventario():
     try:
         df = pd.read_excel(archivo)
         df = normalizar_inventario(df)
-        with excel_lock:
+        with db_lock:
             guardar_inventario(df)
         return redirect("/inventario")
     except Exception as e:
         return f"Error al reemplazar inventario: {e}"
 
 
-asegurar_archivos()
+inicializar_bd()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
